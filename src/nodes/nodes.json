@@ -1,0 +1,1071 @@
+{
+  "nodes": [
+    {
+      "name": "n8n-nodes-base.manualTrigger", "displayName": "Manual Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "play", "color": "#7c5cff", "version": 1, "defaults": {"name": "When clicking 'Test workflow'"},
+      "description": "Runs the flow on clicking a button in the editor", "inputs": 0, "outputs": [""], "properties": []
+    },
+    {
+      "name": "n8n-nodes-base.scheduleTrigger", "displayName": "Schedule Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "clock", "color": "#16a34a", "version": 1.2, "defaults": {"name": "Schedule Trigger"},
+      "description": "Triggers the workflow on a schedule (interval or cron)", "inputs": 0, "outputs": [""],
+      "properties": [
+        {"displayName": "Trigger Rules", "name": "rule", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"interval": [{"field": "days"}]},
+         "options": [{"name": "interval", "displayName": "Trigger Interval", "values": [
+           {"displayName": "Trigger Interval", "name": "field", "type": "options", "default": "days", "options": [
+             {"name": "Seconds", "value": "seconds"}, {"name": "Minutes", "value": "minutes"}, {"name": "Hours", "value": "hours"},
+             {"name": "Days", "value": "days"}, {"name": "Weeks", "value": "weeks"}, {"name": "Months", "value": "months"}, {"name": "Custom (Cron)", "value": "cronExpression"}]},
+           {"displayName": "Seconds Between Triggers", "name": "secondsInterval", "type": "number", "default": 30, "displayOptions": {"show": {"field": ["seconds"]}}},
+           {"displayName": "Minutes Between Triggers", "name": "minutesInterval", "type": "number", "default": 5, "displayOptions": {"show": {"field": ["minutes"]}}},
+           {"displayName": "Hours Between Triggers", "name": "hoursInterval", "type": "number", "default": 1, "displayOptions": {"show": {"field": ["hours"]}}},
+           {"displayName": "Days Between Triggers", "name": "daysInterval", "type": "number", "default": 1, "displayOptions": {"show": {"field": ["days"]}}},
+           {"displayName": "Weeks Between Triggers", "name": "weeksInterval", "type": "number", "default": 1, "displayOptions": {"show": {"field": ["weeks"]}}},
+           {"displayName": "Months Between Triggers", "name": "monthsInterval", "type": "number", "default": 1, "displayOptions": {"show": {"field": ["months"]}}},
+           {"displayName": "Trigger on Day of Month", "name": "triggerAtDayOfMonth", "type": "number", "default": 1, "displayOptions": {"show": {"field": ["months"]}}},
+           {"displayName": "Trigger on Weekdays", "name": "triggerAtDay", "type": "multiOptions", "default": [0], "displayOptions": {"show": {"field": ["weeks"]}}, "options": [
+             {"name": "Monday", "value": 1}, {"name": "Tuesday", "value": 2}, {"name": "Wednesday", "value": 3}, {"name": "Thursday", "value": 4},
+             {"name": "Friday", "value": 5}, {"name": "Saturday", "value": 6}, {"name": "Sunday", "value": 0}]},
+           {"displayName": "Trigger at Hour", "name": "triggerAtHour", "type": "number", "default": 0, "displayOptions": {"show": {"field": ["days", "weeks", "months"]}}, "description": "0-23"},
+           {"displayName": "Trigger at Minute", "name": "triggerAtMinute", "type": "number", "default": 0, "displayOptions": {"show": {"field": ["hours", "days", "weeks", "months"]}}, "description": "0-59"},
+           {"displayName": "Expression", "name": "expression", "type": "string", "default": "", "placeholder": "e.g. 0 15 * 1 sun", "displayOptions": {"show": {"field": ["cronExpression"]}}, "description": "Standard cron syntax (minute hour day month weekday), optionally with seconds first"}
+         ]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.webhook", "displayName": "Webhook", "group": ["trigger"], "category": "Triggers",
+      "icon": "webhook", "color": "#ff6d5a", "version": 2, "defaults": {"name": "Webhook"},
+      "description": "Starts the workflow when a webhook is called", "inputs": 0, "outputs": [""],
+      "credentials": [{"name": "httpBasicAuth", "displayOptions": {"show": {"authentication": ["basicAuth"]}}}, {"name": "httpHeaderAuth", "displayOptions": {"show": {"authentication": ["headerAuth"]}}}],
+      "properties": [
+        {"displayName": "HTTP Method", "name": "httpMethod", "type": "options", "default": "GET", "options": [
+          {"name": "DELETE", "value": "DELETE"}, {"name": "GET", "value": "GET"}, {"name": "HEAD", "value": "HEAD"}, {"name": "PATCH", "value": "PATCH"}, {"name": "POST", "value": "POST"}, {"name": "PUT", "value": "PUT"}]},
+        {"displayName": "Path", "name": "path", "type": "string", "default": "", "placeholder": "webhook", "description": "Use :name for dynamic segments, e.g. users/:id"},
+        {"displayName": "Authentication", "name": "authentication", "type": "options", "default": "none", "options": [
+          {"name": "None", "value": "none"}, {"name": "Basic Auth", "value": "basicAuth"}, {"name": "Header Auth", "value": "headerAuth"}]},
+        {"displayName": "Respond", "name": "responseMode", "type": "options", "default": "onReceived", "options": [
+          {"name": "Immediately", "value": "onReceived", "description": "As soon as this node executes"},
+          {"name": "When Last Node Finishes", "value": "lastNode", "description": "Returns data of the last-executed node"},
+          {"name": "Using 'Respond to Webhook' Node", "value": "responseNode", "description": "Response defined in that node"}]},
+        {"displayName": "Response Code", "name": "responseCode", "type": "number", "default": 200, "displayOptions": {"hide": {"responseMode": ["responseNode"]}}},
+        {"displayName": "Response Data", "name": "responseData", "type": "options", "default": "firstEntryJson", "displayOptions": {"show": {"responseMode": ["lastNode"]}}, "options": [
+          {"name": "All Entries", "value": "allEntries"}, {"name": "First Entry JSON", "value": "firstEntryJson"}, {"name": "First Entry Binary", "value": "firstEntryBinary"}, {"name": "No Response Body", "value": "noData"}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Raw Body", "name": "rawBody", "type": "boolean", "default": false, "description": "Also provide the body as binary data"},
+          {"displayName": "Response Data", "name": "responseData", "type": "options", "default": "", "options": [{"name": "Default message", "value": ""}, {"name": "No Response Body", "value": "noData"}]},
+          {"displayName": "Binary Property", "name": "binaryPropertyName", "type": "string", "default": "data"}
+        ]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.formTrigger", "displayName": "Form Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "form", "color": "#e35f9f", "version": 2, "defaults": {"name": "On form submission"},
+      "description": "Generates a web form and starts the workflow on submission", "inputs": 0, "outputs": [""],
+      "properties": [
+        {"displayName": "Form Title", "name": "formTitle", "type": "string", "default": "", "placeholder": "e.g. Contact us", "required": true},
+        {"displayName": "Form Description", "name": "formDescription", "type": "string", "default": "", "typeOptions": {"rows": 2}},
+        {"displayName": "Path", "name": "path", "type": "string", "default": "", "description": "Optional custom path, otherwise a unique id is used"},
+        {"displayName": "Form Elements", "name": "formFields", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "placeholder": "Add Form Element",
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Field Label", "name": "fieldLabel", "type": "string", "default": "", "required": true},
+           {"displayName": "Element Type", "name": "fieldType", "type": "options", "default": "text", "options": [
+             {"name": "Text", "value": "text"}, {"name": "Textarea", "value": "textarea"}, {"name": "Email", "value": "email"}, {"name": "Number", "value": "number"},
+             {"name": "Password", "value": "password"}, {"name": "Date", "value": "date"}, {"name": "Dropdown List", "value": "dropdown"}]},
+           {"displayName": "Placeholder", "name": "placeholder", "type": "string", "default": ""},
+           {"displayName": "Field Options", "name": "fieldOptions", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "displayOptions": {"show": {"fieldType": ["dropdown"]}},
+            "options": [{"name": "values", "displayName": "Values", "values": [{"displayName": "Option", "name": "option", "type": "string", "default": ""}]}]},
+           {"displayName": "Multiple Choice", "name": "multiselect", "type": "boolean", "default": false, "displayOptions": {"show": {"fieldType": ["dropdown"]}}},
+           {"displayName": "Required Field", "name": "requiredField", "type": "boolean", "default": false}
+         ]}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Submit Button Label", "name": "buttonLabel", "type": "string", "default": "Submit"},
+          {"displayName": "Form Response", "name": "respondWithOptions", "type": "fixedCollection", "default": {"values": {"formSubmittedText": "Your response has been recorded"}},
+           "options": [{"name": "values", "displayName": "Values", "values": [{"displayName": "Text to Show", "name": "formSubmittedText", "type": "string", "default": "Your response has been recorded"}]}]}
+        ]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.emailReadImap", "displayName": "Email Trigger (IMAP)", "group": ["trigger"], "category": "Triggers",
+      "icon": "mail", "color": "#44aa44", "version": 2.1, "defaults": {"name": "Email Trigger (IMAP)"},
+      "description": "Triggers the workflow when a new email is received", "inputs": 0, "outputs": [""],
+      "credentials": [{"name": "imap", "required": true}],
+      "properties": [
+        {"displayName": "Mailbox Name", "name": "mailbox", "type": "string", "default": "INBOX"},
+        {"displayName": "Action", "name": "postProcessAction", "type": "options", "default": "read", "options": [{"name": "Mark as Read", "value": "read"}, {"name": "Nothing", "value": "nothing"}]},
+        {"displayName": "Download Attachments", "name": "downloadAttachments", "type": "boolean", "default": false},
+        {"displayName": "Format", "name": "format", "type": "options", "default": "simple", "options": [
+          {"name": "Simple", "value": "simple"}, {"name": "Resolved (incl. headers)", "value": "resolved"}, {"name": "RAW", "value": "raw"}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Custom Email Rules", "name": "customEmailConfig", "type": "string", "default": "[\"UNSEEN\"]", "description": "IMAP search criteria as JSON array, e.g. [\"UNSEEN\", [\"FROM\", \"boss@example.com\"]] or plain IMAP syntax"},
+          {"displayName": "Poll Interval (seconds)", "name": "pollIntervalSeconds", "type": "number", "default": 60}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.mqttTrigger", "displayName": "MQTT Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "redis", "color": "#9b27af", "version": 1, "defaults": {"name": "MQTT Trigger"},
+      "description": "Listens to MQTT topics", "inputs": 0, "outputs": [""], "credentials": [{"name": "mqtt", "required": true}],
+      "properties": [
+        {"displayName": "Topics", "name": "topics", "type": "string", "default": "", "placeholder": "sensors/+/temp, alerts/#", "description": "Comma-separated, wildcards + and # allowed"},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "JSON Parse Body", "name": "jsonParseBody", "type": "boolean", "default": false},
+          {"displayName": "Only Message", "name": "onlyMessage", "type": "boolean", "default": false},
+          {"displayName": "QoS", "name": "qos", "type": "options", "default": 0, "options": [{"name": "At Most Once (0)", "value": 0}, {"name": "At Least Once (1)", "value": 1}, {"name": "Exactly Once (2)", "value": 2}]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.redisTrigger", "displayName": "Redis Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "redis", "color": "#d82c20", "version": 1, "defaults": {"name": "Redis Trigger"},
+      "description": "Subscribes to Redis pub/sub channels", "inputs": 0, "outputs": [""], "credentials": [{"name": "redis", "required": true}],
+      "properties": [
+        {"displayName": "Channels", "name": "channels", "type": "string", "default": "", "placeholder": "orders, events:*", "description": "Comma-separated, * for patterns"},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "JSON Parse Body", "name": "jsonParseBody", "type": "boolean", "default": false},
+          {"displayName": "Only Message", "name": "onlyMessage", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.rssFeedReadTrigger", "displayName": "RSS Feed Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "rss", "color": "#f26522", "version": 1, "defaults": {"name": "RSS Feed Trigger"},
+      "description": "Starts the workflow when an RSS/Atom feed publishes new items", "inputs": 0, "outputs": [""],
+      "properties": [
+        {"displayName": "Feed URL", "name": "feedUrl", "type": "string", "default": "", "required": true},
+        {"displayName": "Poll Interval (seconds)", "name": "pollIntervalSeconds", "type": "number", "default": 300}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.localFileTrigger", "displayName": "Local File Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "file", "color": "#404040", "version": 1, "defaults": {"name": "Local File Trigger"},
+      "description": "Triggers when files in a folder (inside the files directory) are added, changed or removed", "inputs": 0, "outputs": [""],
+      "properties": [
+        {"displayName": "Folder", "name": "path", "type": "string", "default": "", "placeholder": "inbox", "description": "Relative to FLOWWOLF_FILES_DIR"},
+        {"displayName": "Watch for", "name": "events", "type": "multiOptions", "default": ["add"], "options": [
+          {"name": "File Added", "value": "add"}, {"name": "File Changed", "value": "change"}, {"name": "File Deleted", "value": "unlink"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.workflowTrigger", "displayName": "Workflow Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "workflow", "color": "#ff6d5a", "version": 1, "defaults": {"name": "Workflow Trigger"},
+      "description": "Triggers when this workflow is activated or updated", "inputs": 0, "outputs": [""],
+      "properties": [{"displayName": "Events", "name": "events", "type": "multiOptions", "default": ["activate"], "options": [
+        {"name": "Active Workflow Updated", "value": "update"}, {"name": "Workflow Activated", "value": "activate"}]}]
+    },
+    {
+      "name": "n8n-nodes-base.executeWorkflowTrigger", "displayName": "Execute Workflow Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "workflow", "color": "#ff6d5a", "version": 1.1, "defaults": {"name": "When Executed by Another Workflow"},
+      "description": "Runs when called by an Execute Workflow node", "inputs": 0, "outputs": [""],
+      "properties": [{"displayName": "Input data mode", "name": "inputSource", "type": "options", "default": "passthrough", "options": [{"name": "Accept all data", "value": "passthrough"}]}]
+    },
+    {
+      "name": "n8n-nodes-base.errorTrigger", "displayName": "Error Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "alert", "color": "#e5484d", "version": 1, "defaults": {"name": "Error Trigger"},
+      "description": "Triggers when another workflow fails (set this workflow as its Error Workflow)", "inputs": 0, "outputs": [""], "properties": []
+    },
+    {
+      "name": "@n8n/n8n-nodes-langchain.chatTrigger", "displayName": "Chat Trigger", "group": ["trigger"], "category": "Triggers",
+      "icon": "chat", "color": "#7c5cff", "version": 1.1, "defaults": {"name": "When chat message received"},
+      "description": "Hosts a chat page; every message starts the workflow with chatInput and sessionId", "inputs": 0, "outputs": [""],
+      "properties": [
+        {"displayName": "Path", "name": "path", "type": "string", "default": "", "description": "Optional custom path, otherwise a unique id is used"},
+        {"displayName": "Initial Message", "name": "initialMessages", "type": "string", "default": "Hi there! How can I help you today?", "typeOptions": {"rows": 2}},
+        {"displayName": "The reply shown in the chat is the 'output' (or 'text') field of the last node.", "name": "notice", "type": "notice", "default": ""},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Title", "name": "title", "type": "string", "default": "Hi there! 👋"},
+          {"displayName": "Subtitle", "name": "subtitle", "type": "string", "default": "Start a chat. We're here to help you 24/7."}]}
+      ]
+    },
+    {
+      "name": "@flowwolf/nodes.vectorStore", "displayName": "Vector Store", "group": ["transform"], "category": "AI",
+      "icon": "database", "color": "#7c5cff", "version": 1, "defaults": {"name": "Vector Store"},
+      "description": "Store text as embeddings and find similar passages (RAG). Uses any OpenAI-compatible embeddings API", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "openAiApi", "required": true, "displayOptions": {"show": {"mode": ["insert", "load"]}}}],
+      "properties": [
+        {"displayName": "Operation Mode", "name": "mode", "type": "options", "default": "insert", "options": [
+          {"name": "Insert Documents", "value": "insert"}, {"name": "Get Many (Similarity Search)", "value": "load"}, {"name": "Clear Store", "value": "clear"}]},
+        {"displayName": "Store Key", "name": "memoryKey", "type": "string", "default": "default", "description": "Name of the collection; use the same key to insert and search"},
+        {"displayName": "Embedding Model", "name": "model", "type": "string", "default": "text-embedding-3-small", "displayOptions": {"show": {"mode": ["insert", "load"]}}},
+        {"displayName": "Text", "name": "text", "type": "string", "default": "={{ $json.text }}", "displayOptions": {"show": {"mode": ["insert"]}}},
+        {"displayName": "Prompt", "name": "prompt", "type": "string", "default": "", "displayOptions": {"show": {"mode": ["load"]}}},
+        {"displayName": "Limit", "name": "topK", "type": "number", "default": 4, "displayOptions": {"show": {"mode": ["load"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"mode": ["insert"]}}, "options": [
+          {"displayName": "Chunk Size (characters, 0 = off)", "name": "chunkSize", "type": "number", "default": 1000},
+          {"displayName": "Chunk Overlap", "name": "chunkOverlap", "type": "number", "default": 100},
+          {"displayName": "Store Item Data as Metadata", "name": "includeItemData", "type": "boolean", "default": true}]}
+      ]
+    },
+    {
+      "name": "@n8n/n8n-nodes-langchain.agent", "displayName": "AI Agent", "group": ["transform"], "category": "AI",
+      "aiInputs": ["ai_languageModel", "ai_memory", "ai_tool", "ai_outputParser"],
+      "icon": "sparkle", "color": "#7c5cff", "version": 1.7, "defaults": {"name": "AI Agent"},
+      "description": "An agent that answers with a chat model and calls tools (workflows or HTTP endpoints)", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "openAiApi", "required": true, "displayOptions": {"show": {"provider": ["openAi"]}}}, {"name": "anthropicApi", "required": true, "displayOptions": {"show": {"provider": ["anthropic"]}}}, {"name": "openAiApi", "displayOptions": {"show": {"provider": ["anthropic"]}}}],
+      "properties": [
+        {"displayName": "Model Provider", "name": "provider", "type": "options", "default": "openAi", "options": [{"name": "OpenAI or compatible (Ollama, Groq, Mistral…)", "value": "openAi"}, {"name": "Anthropic", "value": "anthropic"}]},
+        {"displayName": "Model", "name": "model", "type": "string", "default": "gpt-4o-mini", "displayOptions": {"show": {"provider": ["openAi"]}}},
+        {"displayName": "Model", "name": "model", "type": "string", "default": "claude-sonnet-5-5", "displayOptions": {"show": {"provider": ["anthropic"]}}},
+        {"displayName": "Source for Prompt", "name": "promptType", "type": "options", "default": "auto", "options": [{"name": "Connected Chat Trigger (chatInput)", "value": "auto"}, {"name": "Define below", "value": "define"}]},
+        {"displayName": "Prompt", "name": "text", "type": "string", "default": "", "typeOptions": {"rows": 3}, "displayOptions": {"show": {"promptType": ["define"]}}},
+        {"displayName": "Tools", "name": "tools", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "placeholder": "Add Tool",
+         "options": [{"name": "values", "displayName": "Tool", "values": [
+           {"displayName": "Type", "name": "type", "type": "options", "default": "workflow", "options": [{"name": "Call Workflow", "value": "workflow"}, {"name": "HTTP Request", "value": "http"}, {"name": "Search Vector Store", "value": "vectorStore"}]},
+           {"displayName": "Store Key", "name": "memoryKey", "type": "string", "default": "default", "displayOptions": {"show": {"type": ["vectorStore"]}}},
+           {"displayName": "Results", "name": "topK", "type": "number", "default": 4, "displayOptions": {"show": {"type": ["vectorStore"]}}},
+           {"displayName": "Embedding Model", "name": "model", "type": "string", "default": "text-embedding-3-small", "displayOptions": {"show": {"type": ["vectorStore"]}}},
+           {"displayName": "Name", "name": "name", "type": "string", "default": "", "placeholder": "get_weather"},
+           {"displayName": "Description", "name": "description", "type": "string", "default": "", "typeOptions": {"rows": 2}, "description": "Tell the model when to use this tool and what to pass as input"},
+           {"displayName": "Workflow", "name": "workflowId", "type": "workflowSelector", "default": "", "displayOptions": {"show": {"type": ["workflow"]}}, "description": "Receives {query: input}; the output of its last node is returned to the model"},
+           {"displayName": "Method", "name": "method", "type": "options", "default": "GET", "displayOptions": {"show": {"type": ["http"]}}, "options": [{"name": "GET", "value": "GET"}, {"name": "POST", "value": "POST"}]},
+           {"displayName": "URL", "name": "url", "type": "string", "default": "", "placeholder": "https://api.example.com/search?q={input}", "displayOptions": {"show": {"type": ["http"]}}}]}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "System Message", "name": "systemMessage", "type": "string", "default": "You are a helpful assistant", "typeOptions": {"rows": 4}},
+          {"displayName": "Max Iterations", "name": "maxIterations", "type": "number", "default": 10},
+          {"displayName": "Memory: Messages to Remember", "name": "memoryWindow", "type": "number", "default": 5, "description": "Conversation turns kept per session (active workflows only)"},
+          {"displayName": "Memory: Session Key", "name": "sessionKey", "type": "string", "default": "={{ $json.sessionId }}"},
+          {"displayName": "Temperature", "name": "temperature", "type": "number", "default": 0.7},
+          {"displayName": "Max Tokens (Anthropic)", "name": "maxTokens", "type": "number", "default": 4096},
+          {"displayName": "Return Intermediate Steps", "name": "returnIntermediateSteps", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.httpRequest", "displayName": "HTTP Request", "group": ["output"], "category": "Core",
+      "icon": "globe", "color": "#0ea5e9", "version": 4.2, "defaults": {"name": "HTTP Request"},
+      "description": "Makes an HTTP request and returns the response data", "inputs": 1, "outputs": [""],
+      "credentials": [
+        {"name": "httpBasicAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"], "genericAuthType": ["httpBasicAuth"]}}},
+        {"name": "httpHeaderAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"], "genericAuthType": ["httpHeaderAuth"]}}},
+        {"name": "httpQueryAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"], "genericAuthType": ["httpQueryAuth"]}}},
+        {"name": "httpBearerAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"], "genericAuthType": ["httpBearerAuth"]}}},
+        {"name": "httpCustomAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"], "genericAuthType": ["httpCustomAuth"]}}},
+        {"name": "$predefined", "displayOptions": {"show": {"authentication": ["predefinedCredentialType"]}}}
+      ],
+      "properties": [
+        {"displayName": "Method", "name": "method", "type": "options", "default": "GET", "options": [
+          {"name": "DELETE", "value": "DELETE"}, {"name": "GET", "value": "GET"}, {"name": "HEAD", "value": "HEAD"}, {"name": "OPTIONS", "value": "OPTIONS"},
+          {"name": "PATCH", "value": "PATCH"}, {"name": "POST", "value": "POST"}, {"name": "PUT", "value": "PUT"}]},
+        {"displayName": "URL", "name": "url", "type": "string", "default": "", "placeholder": "https://api.example.com/items", "required": true},
+        {"displayName": "Authentication", "name": "authentication", "type": "options", "default": "none", "options": [
+          {"name": "None", "value": "none"}, {"name": "Predefined Credential Type", "value": "predefinedCredentialType"}, {"name": "Generic Credential Type", "value": "genericCredentialType"}]},
+        {"displayName": "Credential Type", "name": "nodeCredentialType", "type": "credentialType", "default": "", "displayOptions": {"show": {"authentication": ["predefinedCredentialType"]}}},
+        {"displayName": "Generic Auth Type", "name": "genericAuthType", "type": "options", "default": "httpHeaderAuth", "displayOptions": {"show": {"authentication": ["genericCredentialType"]}}, "options": [
+          {"name": "Basic Auth", "value": "httpBasicAuth"}, {"name": "Bearer Auth", "value": "httpBearerAuth"}, {"name": "Header Auth", "value": "httpHeaderAuth"},
+          {"name": "Query Auth", "value": "httpQueryAuth"}, {"name": "Custom Auth", "value": "httpCustomAuth"}]},
+        {"displayName": "Send Query Parameters", "name": "sendQuery", "type": "boolean", "default": false},
+        {"displayName": "Specify Query Parameters", "name": "specifyQuery", "type": "options", "default": "keypair", "displayOptions": {"show": {"sendQuery": [true]}}, "options": [{"name": "Using Fields Below", "value": "keypair"}, {"name": "Using JSON", "value": "json"}]},
+        {"displayName": "Query Parameters", "name": "queryParameters", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"parameters": [{"name": "", "value": ""}]}, "displayOptions": {"show": {"sendQuery": [true], "specifyQuery": ["keypair"]}},
+         "options": [{"name": "parameters", "displayName": "Parameter", "values": [{"displayName": "Name", "name": "name", "type": "string", "default": ""}, {"displayName": "Value", "name": "value", "type": "string", "default": ""}]}]},
+        {"displayName": "JSON", "name": "jsonQuery", "type": "json", "default": "", "displayOptions": {"show": {"sendQuery": [true], "specifyQuery": ["json"]}}},
+        {"displayName": "Send Headers", "name": "sendHeaders", "type": "boolean", "default": false},
+        {"displayName": "Specify Headers", "name": "specifyHeaders", "type": "options", "default": "keypair", "displayOptions": {"show": {"sendHeaders": [true]}}, "options": [{"name": "Using Fields Below", "value": "keypair"}, {"name": "Using JSON", "value": "json"}]},
+        {"displayName": "Header Parameters", "name": "headerParameters", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"parameters": [{"name": "", "value": ""}]}, "displayOptions": {"show": {"sendHeaders": [true], "specifyHeaders": ["keypair"]}},
+         "options": [{"name": "parameters", "displayName": "Parameter", "values": [{"displayName": "Name", "name": "name", "type": "string", "default": ""}, {"displayName": "Value", "name": "value", "type": "string", "default": ""}]}]},
+        {"displayName": "JSON", "name": "jsonHeaders", "type": "json", "default": "", "displayOptions": {"show": {"sendHeaders": [true], "specifyHeaders": ["json"]}}},
+        {"displayName": "Send Body", "name": "sendBody", "type": "boolean", "default": false},
+        {"displayName": "Body Content Type", "name": "contentType", "type": "options", "default": "json", "displayOptions": {"show": {"sendBody": [true]}}, "options": [
+          {"name": "JSON", "value": "json"}, {"name": "Form Urlencoded", "value": "form-urlencoded"}, {"name": "Form-Data", "value": "multipart-form-data"},
+          {"name": "Binary File", "value": "binaryData"}, {"name": "Raw", "value": "raw"}]},
+        {"displayName": "Specify Body", "name": "specifyBody", "type": "options", "default": "keypair", "displayOptions": {"show": {"sendBody": [true], "contentType": ["json", "form-urlencoded"]}}, "options": [{"name": "Using Fields Below", "value": "keypair"}, {"name": "Using JSON", "value": "json"}]},
+        {"displayName": "Body Parameters", "name": "bodyParameters", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"parameters": [{"name": "", "value": ""}]}, "displayOptions": {"show": {"sendBody": [true], "specifyBody": ["keypair"]}},
+         "options": [{"name": "parameters", "displayName": "Parameter", "values": [
+           {"displayName": "Parameter Type", "name": "parameterType", "type": "options", "default": "formData", "displayOptions": {"show": {"/contentType": ["multipart-form-data"]}}, "options": [{"name": "Form Data", "value": "formData"}, {"name": "Binary File", "value": "formBinaryData"}]},
+           {"displayName": "Name", "name": "name", "type": "string", "default": ""},
+           {"displayName": "Value", "name": "value", "type": "string", "default": ""},
+           {"displayName": "Input Data Field Name", "name": "inputDataFieldName", "type": "string", "default": "data", "displayOptions": {"show": {"parameterType": ["formBinaryData"]}}}]}]},
+        {"displayName": "JSON", "name": "jsonBody", "type": "json", "default": "", "displayOptions": {"show": {"sendBody": [true], "contentType": ["json"], "specifyBody": ["json"]}}},
+        {"displayName": "Body", "name": "body", "type": "string", "default": "", "typeOptions": {"rows": 4}, "displayOptions": {"show": {"sendBody": [true], "contentType": ["raw", "form-urlencoded"], "specifyBody": ["json"]}}},
+        {"displayName": "Content Type", "name": "rawContentType", "type": "string", "default": "text/plain", "displayOptions": {"show": {"sendBody": [true], "contentType": ["raw"]}}},
+        {"displayName": "Input Data Field Name", "name": "inputDataFieldName", "type": "string", "default": "data", "displayOptions": {"show": {"sendBody": [true], "contentType": ["binaryData"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Batching", "name": "batching", "type": "fixedCollection", "default": {"batch": {}}, "options": [{"name": "batch", "displayName": "Batching", "values": [
+            {"displayName": "Items per Batch", "name": "batchSize", "type": "number", "default": 50}, {"displayName": "Batch Interval (ms)", "name": "batchInterval", "type": "number", "default": 1000}]}]},
+          {"displayName": "Ignore SSL Issues (Insecure)", "name": "allowUnauthorizedCerts", "type": "boolean", "default": false},
+          {"displayName": "Response", "name": "response", "type": "fixedCollection", "default": {"response": {}}, "options": [{"name": "response", "displayName": "Response", "values": [
+            {"displayName": "Include Response Headers and Status", "name": "fullResponse", "type": "boolean", "default": false},
+            {"displayName": "Never Error", "name": "neverError", "type": "boolean", "default": false},
+            {"displayName": "Response Format", "name": "responseFormat", "type": "options", "default": "autodetect", "options": [
+              {"name": "Autodetect", "value": "autodetect"}, {"name": "File", "value": "file"}, {"name": "JSON", "value": "json"}, {"name": "Text", "value": "text"}]},
+            {"displayName": "Put Output in Field", "name": "outputPropertyName", "type": "string", "default": "data"}]}]},
+          {"displayName": "Timeout (ms)", "name": "timeout", "type": "number", "default": 10000}
+        ]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.code", "displayName": "Code", "group": ["transform"], "category": "Core",
+      "icon": "code", "color": "#ff9922", "version": 2, "defaults": {"name": "Code"},
+      "description": "Run custom JavaScript code", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "runOnceForAllItems", "options": [
+          {"name": "Run Once for All Items", "value": "runOnceForAllItems"}, {"name": "Run Once for Each Item", "value": "runOnceForEachItem"}]},
+        {"displayName": "Language", "name": "language", "type": "options", "default": "javaScript", "options": [{"name": "JavaScript", "value": "javaScript"}, {"name": "Python", "value": "python", "description": "Python 3 (flowwolf:python image, owners/admins only)"}]},
+        {"displayName": "Python", "name": "pythonCode", "type": "string", "typeOptions": {"editor": "codeNodeEditor", "rows": 14}, "noExpression": true, "displayOptions": {"show": {"language": ["python"]}},
+         "default": "# Loop over input items and add a new field called 'my_new_field' to the JSON of each one\nfor item in _input.all():\n    item.json.my_new_field = 1\nreturn _input.all()"},
+        {"displayName": "JavaScript", "name": "jsCode", "displayOptions": {"show": {"language": ["javaScript"]}}, "type": "string", "typeOptions": {"editor": "codeNodeEditor", "rows": 14}, "noExpression": true,
+         "default": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.set", "displayName": "Edit Fields (Set)", "group": ["input"], "category": "Data transformation",
+      "icon": "pen", "color": "#0284c7", "version": 3.4, "defaults": {"name": "Edit Fields"},
+      "description": "Modify, add, or remove item fields", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "manual", "options": [{"name": "Manual Mapping", "value": "manual"}, {"name": "JSON", "value": "raw"}]},
+        {"displayName": "Fields to Set", "name": "assignments", "type": "assignmentCollection", "default": {"assignments": []}, "displayOptions": {"show": {"mode": ["manual"]}}},
+        {"displayName": "JSON", "name": "jsonOutput", "type": "json", "default": "{\n  \"my_field_1\": \"value\",\n  \"my_field_2\": 1\n}", "displayOptions": {"show": {"mode": ["raw"]}}},
+        {"displayName": "Include Other Input Fields", "name": "includeOtherFields", "type": "boolean", "default": false},
+        {"displayName": "Input Fields to Include", "name": "include", "type": "options", "default": "all", "displayOptions": {"show": {"includeOtherFields": [true]}}, "options": [
+          {"name": "All", "value": "all"}, {"name": "Selected", "value": "selected"}, {"name": "All Except", "value": "except"}]},
+        {"displayName": "Fields to Include", "name": "includeFields", "type": "string", "default": "", "placeholder": "e.g. fieldToInclude1,fieldToInclude2", "displayOptions": {"show": {"include": ["selected"], "includeOtherFields": [true]}}},
+        {"displayName": "Fields to Exclude", "name": "excludeFields", "type": "string", "default": "", "displayOptions": {"show": {"include": ["except"], "includeOtherFields": [true]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Include Binary File", "name": "includeBinary", "type": "boolean", "default": true},
+          {"displayName": "Ignore Type Conversion Errors", "name": "ignoreConversionErrors", "type": "boolean", "default": false},
+          {"displayName": "Support Dot Notation", "name": "dotNotation", "type": "boolean", "default": true}
+        ]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.if", "displayName": "If", "group": ["transform"], "category": "Flow",
+      "icon": "branch", "color": "#408000", "version": 2, "defaults": {"name": "If"},
+      "description": "Route items to different branches (true/false)", "inputs": 1, "outputs": ["true", "false"],
+      "properties": [
+        {"displayName": "Conditions", "name": "conditions", "type": "filter", "default": {}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Ignore Case", "name": "ignoreCase", "type": "boolean", "default": false},
+          {"displayName": "Less Strict Type Validation", "name": "looseTypeValidation", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.filter", "displayName": "Filter", "group": ["transform"], "category": "Flow",
+      "icon": "filter", "color": "#229eff", "version": 2, "defaults": {"name": "Filter"},
+      "description": "Remove items matching a condition", "inputs": 1, "outputs": ["Kept"],
+      "properties": [
+        {"displayName": "Conditions", "name": "conditions", "type": "filter", "default": {}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Ignore Case", "name": "ignoreCase", "type": "boolean", "default": false},
+          {"displayName": "Less Strict Type Validation", "name": "looseTypeValidation", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.switch", "displayName": "Switch", "group": ["transform"], "category": "Flow",
+      "icon": "switch", "color": "#506000", "version": 3, "defaults": {"name": "Switch"},
+      "description": "Route items depending on defined expression or rules", "inputs": 1, "outputs": "dynamic:switch",
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "rules", "options": [
+          {"name": "Rules", "value": "rules", "description": "Build a matching rule for each output"},
+          {"name": "Expression", "value": "expression", "description": "Write an expression to return the output index"}]},
+        {"displayName": "Routing Rules", "name": "rules", "type": "fixedCollection", "typeOptions": {"multipleValues": true, "sortable": true}, "default": {"values": [{"conditions": {}}]}, "placeholder": "Add Routing Rule", "displayOptions": {"show": {"mode": ["rules"]}},
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Conditions", "name": "conditions", "type": "filter", "default": {}},
+           {"displayName": "Rename Output", "name": "renameOutput", "type": "boolean", "default": false},
+           {"displayName": "Output Name", "name": "outputKey", "type": "string", "default": "", "displayOptions": {"show": {"renameOutput": [true]}}}]}]},
+        {"displayName": "Number of Outputs", "name": "numberOutputs", "type": "number", "default": 4, "displayOptions": {"show": {"mode": ["expression"]}}},
+        {"displayName": "Output Index", "name": "output", "type": "number", "default": "", "description": "The output index to send the input item to (starts at 0)", "displayOptions": {"show": {"mode": ["expression"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"mode": ["rules"]}}, "options": [
+          {"displayName": "Fallback Output", "name": "fallbackOutput", "type": "options", "default": "none", "options": [{"name": "None (default)", "value": "none"}, {"name": "Extra Output", "value": "extra"}]},
+          {"displayName": "Ignore Case", "name": "ignoreCase", "type": "boolean", "default": false},
+          {"displayName": "Send data to all matching outputs", "name": "allMatchingOutputs", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.merge", "displayName": "Merge", "group": ["transform"], "category": "Flow",
+      "icon": "merge", "color": "#00bbce", "version": 3, "defaults": {"name": "Merge"},
+      "description": "Merges data of multiple streams once data from both is available", "inputs": 2, "outputs": [""],
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "append", "options": [
+          {"name": "Append", "value": "append", "description": "Output items of each input, one after the other"},
+          {"name": "Combine", "value": "combine", "description": "Merge matching items together"},
+          {"name": "Choose Branch", "value": "chooseBranch", "description": "Output data from a specific branch"}]},
+        {"displayName": "Combine By", "name": "combineBy", "type": "options", "default": "combineByFields", "displayOptions": {"show": {"mode": ["combine"]}}, "options": [
+          {"name": "Matching Fields", "value": "combineByFields"}, {"name": "Position", "value": "combineByPosition"}, {"name": "All Possible Combinations", "value": "combineAll"}]},
+        {"displayName": "Fields to Match", "name": "fieldsToMatchString", "type": "string", "default": "", "placeholder": "e.g. id, name", "displayOptions": {"show": {"mode": ["combine"], "combineBy": ["combineByFields"]}}},
+        {"displayName": "Output Type", "name": "joinMode", "type": "options", "default": "keepMatches", "displayOptions": {"show": {"mode": ["combine"], "combineBy": ["combineByFields"]}}, "options": [
+          {"name": "Keep Matches", "value": "keepMatches"}, {"name": "Keep Non-Matches", "value": "keepNonMatches"}, {"name": "Keep Everything", "value": "keepEverything"},
+          {"name": "Enrich Input 1", "value": "enrichInput1"}, {"name": "Enrich Input 2", "value": "enrichInput2"}]},
+        {"displayName": "Output Data From", "name": "outputDataFrom", "type": "options", "default": "both", "displayOptions": {"show": {"mode": ["combine"], "joinMode": ["keepMatches", "keepNonMatches"]}}, "options": [
+          {"name": "Both Inputs Merged Together", "value": "both"}, {"name": "Input 1", "value": "input1"}, {"name": "Input 2", "value": "input2"}]},
+        {"displayName": "Output Type", "name": "output", "type": "options", "default": "specifiedInput", "displayOptions": {"show": {"mode": ["chooseBranch"]}}, "options": [
+          {"name": "Data of Specified Input", "value": "specifiedInput"}, {"name": "A Single, Empty Item", "value": "empty"}]},
+        {"displayName": "Use Data of Input", "name": "useDataOfInput", "type": "options", "default": 1, "displayOptions": {"show": {"mode": ["chooseBranch"], "output": ["specifiedInput"]}}, "options": [{"name": "Input 1", "value": 1}, {"name": "Input 2", "value": 2}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"mode": ["combine"]}}, "options": [
+          {"displayName": "Include Any Unpaired Items", "name": "includeUnpaired", "type": "boolean", "default": false},
+          {"displayName": "Clash Handling", "name": "clashHandling", "type": "fixedCollection", "default": {"values": {}}, "options": [{"name": "values", "displayName": "Values", "values": [
+            {"displayName": "When Field Values Clash", "name": "resolveClash", "type": "options", "default": "preferInput2", "options": [{"name": "Prefer Input 1 Version", "value": "preferInput1"}, {"name": "Prefer Input 2 Version", "value": "preferInput2"}]}]}]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.splitInBatches", "displayName": "Loop Over Items (Split in Batches)", "group": ["organization"], "category": "Flow",
+      "icon": "loop", "color": "#007755", "version": 3, "defaults": {"name": "Loop Over Items"},
+      "description": "Split data into batches and iterate over each batch", "inputs": 1, "outputs": ["done", "loop"],
+      "properties": [
+        {"displayName": "Batch Size", "name": "batchSize", "type": "number", "default": 1, "description": "The number of items to return with each call"},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [{"displayName": "Reset", "name": "reset", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.wait", "displayName": "Wait", "group": ["organization"], "category": "Flow",
+      "icon": "pause", "color": "#804050", "version": 1.1, "defaults": {"name": "Wait"},
+      "description": "Wait before continue with execution", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Resume", "name": "resume", "type": "options", "default": "timeInterval", "options": [
+          {"name": "After Time Interval", "value": "timeInterval"}, {"name": "At Specified Time", "value": "specificTime"},
+          {"name": "On Webhook Call", "value": "webhook"}, {"name": "On Form Submitted", "value": "form"}]},
+        {"displayName": "The execution resumes when $execution.resumeUrl (webhook) or $execution.resumeFormUrl (form) is called. Send that URL in an earlier node.", "name": "resumeNotice", "type": "notice", "default": "", "displayOptions": {"show": {"resume": ["webhook", "form"]}}},
+        {"displayName": "Form Title", "name": "formTitle", "type": "string", "default": "", "displayOptions": {"show": {"resume": ["form"]}}},
+        {"displayName": "Form Elements", "name": "formFields", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "displayOptions": {"show": {"resume": ["form"]}},
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Field Label", "name": "fieldLabel", "type": "string", "default": ""},
+           {"displayName": "Element Type", "name": "fieldType", "type": "options", "default": "text", "options": [{"name": "Text", "value": "text"}, {"name": "Textarea", "value": "textarea"}, {"name": "Email", "value": "email"}, {"name": "Number", "value": "number"}, {"name": "Date", "value": "date"}]},
+           {"displayName": "Required Field", "name": "requiredField", "type": "boolean", "default": false}]}]},
+        {"displayName": "Limit Wait Time", "name": "limitWaitTime", "type": "boolean", "default": false, "displayOptions": {"show": {"resume": ["webhook", "form"]}}},
+        {"displayName": "Amount", "name": "resumeAmount", "type": "number", "default": 1, "displayOptions": {"show": {"limitWaitTime": [true]}}},
+        {"displayName": "Unit", "name": "resumeUnit", "type": "options", "default": "hours", "displayOptions": {"show": {"limitWaitTime": [true]}}, "options": [{"name": "Seconds", "value": "seconds"}, {"name": "Minutes", "value": "minutes"}, {"name": "Hours", "value": "hours"}, {"name": "Days", "value": "days"}]},
+        {"displayName": "Wait Amount", "name": "amount", "type": "number", "default": 5, "displayOptions": {"show": {"resume": ["timeInterval"]}}},
+        {"displayName": "Wait Unit", "name": "unit", "type": "options", "default": "seconds", "displayOptions": {"show": {"resume": ["timeInterval"]}}, "options": [
+          {"name": "Seconds", "value": "seconds"}, {"name": "Minutes", "value": "minutes"}, {"name": "Hours", "value": "hours"}, {"name": "Days", "value": "days"}]},
+        {"displayName": "Date and Time", "name": "dateTime", "type": "dateTime", "default": "", "displayOptions": {"show": {"resume": ["specificTime"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.noOp", "displayName": "No Operation, do nothing", "group": ["organization"], "category": "Flow",
+      "icon": "arrow", "color": "#b0b0b0", "version": 1, "defaults": {"name": "No Operation, do nothing"},
+      "description": "No Operation", "inputs": 1, "outputs": [""], "properties": []
+    },
+    {
+      "name": "n8n-nodes-base.stopAndError", "displayName": "Stop and Error", "group": ["input"], "category": "Flow",
+      "icon": "stop", "color": "#ff0000", "version": 1, "defaults": {"name": "Stop and Error"},
+      "description": "Throw an error in the workflow", "inputs": 1, "outputs": [],
+      "properties": [
+        {"displayName": "Error Type", "name": "errorType", "type": "options", "default": "errorMessage", "options": [{"name": "Error Message", "value": "errorMessage"}, {"name": "Error Object", "value": "errorObject"}]},
+        {"displayName": "Error Message", "name": "errorMessage", "type": "string", "default": "", "displayOptions": {"show": {"errorType": ["errorMessage"]}}},
+        {"displayName": "Error Object", "name": "errorObject", "type": "json", "default": "{\n  \"code\": \"404\",\n  \"message\": \"Not found\"\n}", "displayOptions": {"show": {"errorType": ["errorObject"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.executeWorkflow", "displayName": "Execute Workflow", "group": ["transform"], "category": "Flow",
+      "icon": "workflow", "color": "#ff6d5a", "version": 1.1, "defaults": {"name": "Execute Workflow"},
+      "description": "Execute another workflow", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Source", "name": "source", "type": "options", "default": "database", "options": [{"name": "Database", "value": "database"}, {"name": "Define Below", "value": "parameter"}]},
+        {"displayName": "Workflow", "name": "workflowId", "type": "workflowSelector", "default": "", "displayOptions": {"show": {"source": ["database"]}}},
+        {"displayName": "Workflow JSON", "name": "workflowJson", "type": "json", "default": "\n\n\n", "displayOptions": {"show": {"source": ["parameter"]}}},
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "once", "options": [
+          {"name": "Run once with all items", "value": "once"}, {"name": "Run once for each item", "value": "each"}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [{"displayName": "Wait For Sub-Workflow Completion", "name": "waitForSubWorkflow", "type": "boolean", "default": true}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.respondToWebhook", "displayName": "Respond to Webhook", "group": ["transform"], "category": "Core",
+      "icon": "reply", "color": "#885577", "version": 1.1, "defaults": {"name": "Respond to Webhook"},
+      "description": "Returns data for Webhook", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Respond With", "name": "respondWith", "type": "options", "default": "firstIncomingItem", "options": [
+          {"name": "All Incoming Items", "value": "allIncomingItems"}, {"name": "Binary File", "value": "binary"}, {"name": "First Incoming Item", "value": "firstIncomingItem"},
+          {"name": "JSON", "value": "json"}, {"name": "No Data", "value": "noData"}, {"name": "Redirect", "value": "redirect"}, {"name": "Text", "value": "text"}]},
+        {"displayName": "Redirect URL", "name": "redirectURL", "type": "string", "default": "", "displayOptions": {"show": {"respondWith": ["redirect"]}}},
+        {"displayName": "Response Body", "name": "responseBody", "type": "json", "default": "{\n  \"myField\": \"value\"\n}", "displayOptions": {"show": {"respondWith": ["json"]}}},
+        {"displayName": "Response Body", "name": "responseBody", "type": "string", "default": "", "typeOptions": {"rows": 2}, "displayOptions": {"show": {"respondWith": ["text"]}}},
+        {"displayName": "Response Data Source", "name": "inputFieldName", "type": "string", "default": "data", "displayOptions": {"show": {"respondWith": ["binary"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Response Code", "name": "responseCode", "type": "number", "default": 200},
+          {"displayName": "Response Headers", "name": "responseHeaders", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"entries": []},
+           "options": [{"name": "entries", "displayName": "Entries", "values": [{"displayName": "Name", "name": "name", "type": "string", "default": ""}, {"displayName": "Value", "name": "value", "type": "string", "default": ""}]}]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.compareDatasets", "displayName": "Compare Datasets", "group": ["transform"], "category": "Flow",
+      "icon": "merge", "color": "#8000ff", "version": 2.3, "defaults": {"name": "Compare Datasets"},
+      "description": "Compare two inputs for changes", "inputs": 2, "outputs": ["In A only", "Same", "Different", "In B only"],
+      "properties": [
+        {"displayName": "Fields to Match", "name": "mergeByFields", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": [{"field1": "", "field2": ""}]},
+         "options": [{"name": "values", "displayName": "Values", "values": [{"displayName": "Input A Field", "name": "field1", "type": "string", "default": ""}, {"displayName": "Input B Field", "name": "field2", "type": "string", "default": ""}]}]},
+        {"displayName": "When There Are Differences", "name": "resolve", "type": "options", "default": "includeBoth", "options": [
+          {"name": "Include Both Versions", "value": "includeBoth"}, {"name": "Use Input A Version", "value": "preferInput1"}, {"name": "Use Input B Version", "value": "preferInput2"}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [{"displayName": "Fields to Skip Comparing", "name": "skipFields", "type": "string", "default": ""}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.jwt", "displayName": "JWT", "group": ["transform"], "category": "Data transformation",
+      "icon": "lock", "color": "#c400c4", "version": 1, "defaults": {"name": "JWT"},
+      "description": "Sign, decode and verify JSON Web Tokens (HS256/384/512)", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "jwtAuth", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "sign", "options": [{"name": "Sign", "value": "sign"}, {"name": "Decode", "value": "decode"}, {"name": "Verify", "value": "verify"}]},
+        {"displayName": "Payload Claims (JSON)", "name": "claimsJson", "type": "json", "default": "{\n  \"sub\": \"\"\n}", "displayOptions": {"show": {"operation": ["sign"]}}},
+        {"displayName": "Token", "name": "token", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["decode", "verify"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Expires In (seconds)", "name": "expiresIn", "type": "number", "default": 3600},
+          {"displayName": "Return Additional Info (header)", "name": "complete", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.totp", "displayName": "TOTP", "group": ["transform"], "category": "Data transformation",
+      "icon": "lock", "color": "#1a73e8", "version": 1, "defaults": {"name": "TOTP"},
+      "description": "Generate a time-based one-time password", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "totpApi", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "generateSecret", "options": [{"name": "Generate Secret", "value": "generateSecret", "description": "Generate the current TOTP code"}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Algorithm", "name": "algorithm", "type": "options", "default": "SHA1", "options": [{"name": "SHA1", "value": "SHA1"}, {"name": "SHA256", "value": "SHA256"}, {"name": "SHA512", "value": "SHA512"}]},
+          {"displayName": "Digits", "name": "digits", "type": "number", "default": 6},
+          {"displayName": "Period (seconds)", "name": "period", "type": "number", "default": 30}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.xml", "displayName": "XML", "group": ["transform"], "category": "Data transformation",
+      "icon": "code", "color": "#333377", "version": 1, "defaults": {"name": "XML"},
+      "description": "Convert data from and to XML", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "xmlToJson", "options": [{"name": "JSON to XML", "value": "jsonToXml"}, {"name": "XML to JSON", "value": "xmlToJson"}]},
+        {"displayName": "Property Name", "name": "dataPropertyName", "type": "string", "default": "data"},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"mode": ["jsonToXml"]}}, "options": [
+          {"displayName": "Root Name", "name": "rootName", "type": "string", "default": "root"}, {"displayName": "Headless", "name": "headless", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.markdown", "displayName": "Markdown", "group": ["transform"], "category": "Data transformation",
+      "icon": "pen", "color": "#000000", "version": 1, "defaults": {"name": "Markdown"},
+      "description": "Convert between Markdown and HTML", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "htmlToMarkdown", "options": [{"name": "HTML to Markdown", "value": "htmlToMarkdown"}, {"name": "Markdown to HTML", "value": "markdownToHtml"}]},
+        {"displayName": "HTML", "name": "html", "type": "string", "default": "", "typeOptions": {"rows": 4}, "displayOptions": {"show": {"mode": ["htmlToMarkdown"]}}},
+        {"displayName": "Markdown", "name": "markdown", "type": "string", "default": "", "typeOptions": {"rows": 4}, "displayOptions": {"show": {"mode": ["markdownToHtml"]}}},
+        {"displayName": "Destination Key", "name": "destinationKey", "type": "string", "default": "data"}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.compression", "displayName": "Compression", "group": ["transform"], "category": "Files",
+      "icon": "file", "color": "#408000", "version": 1.1, "defaults": {"name": "Compression"},
+      "description": "Compress and decompress files (zip, gzip)", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "decompress", "options": [{"name": "Compress", "value": "compress"}, {"name": "Decompress", "value": "decompress"}]},
+        {"displayName": "Input Binary Field(s)", "name": "binaryPropertyName", "type": "string", "default": "data", "description": "Comma-separated for several files"},
+        {"displayName": "Output Format", "name": "outputFormat", "type": "options", "default": "zip", "displayOptions": {"show": {"operation": ["compress"]}}, "options": [{"name": "Zip", "value": "zip"}, {"name": "Gzip", "value": "gzip"}]},
+        {"displayName": "File Name", "name": "fileName", "type": "string", "default": "data.zip", "displayOptions": {"show": {"operation": ["compress"], "outputFormat": ["zip"]}}},
+        {"displayName": "Put Output File in Field", "name": "binaryPropertyOutput", "type": "string", "default": "data", "displayOptions": {"show": {"operation": ["compress"], "outputFormat": ["zip"]}}},
+        {"displayName": "Output File Prefix", "name": "outputPrefix", "type": "string", "default": "file_", "displayOptions": {"show": {"operation": ["decompress"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.executionData", "displayName": "Execution Data", "group": ["input"], "category": "Core",
+      "icon": "tag", "color": "#29a568", "version": 1, "defaults": {"name": "Execution Data"},
+      "description": "Save metadata with the execution (shown when inspecting it)", "inputs": 1, "outputs": [""],
+      "properties": [{"displayName": "Data to Save", "name": "dataToSave", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "placeholder": "Add Saved Field",
+        "options": [{"name": "values", "displayName": "Values", "values": [{"displayName": "Key", "name": "key", "type": "string", "default": ""}, {"displayName": "Value", "name": "value", "type": "string", "default": ""}]}]}]
+    },
+    {
+      "name": "n8n-nodes-base.debugHelper", "displayName": "DebugHelper", "group": ["output"], "category": "Core",
+      "icon": "alert", "color": "#ff9922", "version": 1, "defaults": {"name": "DebugHelper"},
+      "description": "Generate test data or throw errors while building workflows", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Category", "name": "category", "type": "options", "default": "throwError", "options": [
+          {"name": "Do Nothing", "value": "doNothing"}, {"name": "Throw Error", "value": "throwError"}, {"name": "Generate Random Data", "value": "randomData"}]},
+        {"displayName": "Error Message", "name": "throwErrorMessage", "type": "string", "default": "Node has thrown an error", "displayOptions": {"show": {"category": ["throwError"]}}},
+        {"displayName": "Data Type", "name": "randomDataType", "type": "options", "default": "user", "displayOptions": {"show": {"category": ["randomData"]}}, "options": [
+          {"name": "User Data", "value": "user"}, {"name": "Email", "value": "email"}, {"name": "UUID", "value": "uuid"}, {"name": "Number", "value": "number"}]},
+        {"displayName": "Number of Items", "name": "randomDataCount", "type": "number", "default": 10, "displayOptions": {"show": {"category": ["randomData"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.splitOut", "displayName": "Split Out", "group": ["transform"], "category": "Data transformation",
+      "icon": "split", "color": "#5d6f84", "version": 1, "defaults": {"name": "Split Out"},
+      "description": "Turn a list inside item(s) into separate items", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Fields To Split Out", "name": "fieldToSplitOut", "type": "string", "default": "", "placeholder": "e.g. data.items", "required": true},
+        {"displayName": "Include", "name": "include", "type": "options", "default": "noOtherFields", "options": [
+          {"name": "No Other Fields", "value": "noOtherFields"}, {"name": "All Other Fields", "value": "allOtherFields"}, {"name": "Selected Other Fields", "value": "selectedOtherFields"}]},
+        {"displayName": "Fields To Include", "name": "fieldsToInclude", "type": "string", "default": "", "displayOptions": {"show": {"include": ["selectedOtherFields"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Destination Field Name", "name": "destinationFieldName", "type": "string", "default": ""},
+          {"displayName": "Disable Dot Notation", "name": "disableDotNotation", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.aggregate", "displayName": "Aggregate", "group": ["transform"], "category": "Data transformation",
+      "icon": "layers", "color": "#5d6f84", "version": 1, "defaults": {"name": "Aggregate"},
+      "description": "Combine a field from many items into a list in a single item", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Aggregate", "name": "aggregate", "type": "options", "default": "aggregateIndividualFields", "options": [
+          {"name": "Individual Fields", "value": "aggregateIndividualFields"}, {"name": "All Item Data (Into a Single List)", "value": "aggregateAllItemData"}]},
+        {"displayName": "Fields To Aggregate", "name": "fieldsToAggregate", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"fieldToAggregate": [{"fieldToAggregate": ""}]}, "displayOptions": {"show": {"aggregate": ["aggregateIndividualFields"]}},
+         "options": [{"name": "fieldToAggregate", "displayName": "", "values": [
+           {"displayName": "Input Field Name", "name": "fieldToAggregate", "type": "string", "default": ""},
+           {"displayName": "Rename Field", "name": "renameField", "type": "boolean", "default": false},
+           {"displayName": "Output Field Name", "name": "outputFieldName", "type": "string", "default": "", "displayOptions": {"show": {"renameField": [true]}}}]}]},
+        {"displayName": "Put Output in Field", "name": "destinationFieldName", "type": "string", "default": "data", "displayOptions": {"show": {"aggregate": ["aggregateAllItemData"]}}},
+        {"displayName": "Include", "name": "include", "type": "options", "default": "allFields", "displayOptions": {"show": {"aggregate": ["aggregateAllItemData"]}}, "options": [
+          {"name": "All Fields", "value": "allFields"}, {"name": "Specified Fields", "value": "specifiedFields"}, {"name": "All Fields Except", "value": "allFieldsExcept"}]},
+        {"displayName": "Fields To Include", "name": "fieldsToInclude", "type": "string", "default": "", "displayOptions": {"show": {"include": ["specifiedFields"]}}},
+        {"displayName": "Fields To Exclude", "name": "fieldsToExclude", "type": "string", "default": "", "displayOptions": {"show": {"include": ["allFieldsExcept"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"aggregate": ["aggregateIndividualFields"]}}, "options": [
+          {"displayName": "Merge Lists", "name": "mergeLists", "type": "boolean", "default": false},
+          {"displayName": "Keep Missing And Null Values", "name": "keepMissing", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.sort", "displayName": "Sort", "group": ["transform"], "category": "Data transformation",
+      "icon": "sort", "color": "#5d6f84", "version": 1, "defaults": {"name": "Sort"},
+      "description": "Change items order", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Type", "name": "type", "type": "options", "default": "simple", "options": [{"name": "Simple", "value": "simple"}, {"name": "Random", "value": "random"}]},
+        {"displayName": "Fields To Sort By", "name": "sortFieldsUi", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"sortField": [{"fieldName": "", "order": "ascending"}]}, "displayOptions": {"show": {"type": ["simple"]}},
+         "options": [{"name": "sortField", "displayName": "Sort Field", "values": [
+           {"displayName": "Field Name", "name": "fieldName", "type": "string", "default": ""},
+           {"displayName": "Order", "name": "order", "type": "options", "default": "ascending", "options": [{"name": "Ascending", "value": "ascending"}, {"name": "Descending", "value": "descending"}]}]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.limit", "displayName": "Limit", "group": ["transform"], "category": "Data transformation",
+      "icon": "scissors", "color": "#5d6f84", "version": 1, "defaults": {"name": "Limit"},
+      "description": "Restrict the number of items", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Max Items", "name": "maxItems", "type": "number", "default": 1},
+        {"displayName": "Keep", "name": "keep", "type": "options", "default": "firstItems", "options": [{"name": "First Items", "value": "firstItems"}, {"name": "Last Items", "value": "lastItems"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.removeDuplicates", "displayName": "Remove Duplicates", "group": ["transform"], "category": "Data transformation",
+      "icon": "copy", "color": "#5d6f84", "version": 1.1, "defaults": {"name": "Remove Duplicates"},
+      "description": "Delete items with matching field values", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Compare", "name": "compare", "type": "options", "default": "allFields", "options": [
+          {"name": "All Fields", "value": "allFields"}, {"name": "All Fields Except", "value": "allFieldsExcept"}, {"name": "Selected Fields", "value": "selectedFields"}]},
+        {"displayName": "Fields To Exclude", "name": "fieldsToExclude", "type": "string", "default": "", "displayOptions": {"show": {"compare": ["allFieldsExcept"]}}},
+        {"displayName": "Fields To Compare", "name": "fieldsToCompare", "type": "string", "default": "", "displayOptions": {"show": {"compare": ["selectedFields"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.summarize", "displayName": "Summarize", "group": ["transform"], "category": "Data transformation",
+      "icon": "sigma", "color": "#5d6f84", "version": 1, "defaults": {"name": "Summarize"},
+      "description": "Sum, count, max, etc. across items", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Fields to Summarize", "name": "fieldsToSummarize", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": [{"aggregation": "count", "field": ""}]},
+         "options": [{"name": "values", "displayName": "", "values": [
+           {"displayName": "Aggregation", "name": "aggregation", "type": "options", "default": "count", "options": [
+             {"name": "Append", "value": "append"}, {"name": "Average", "value": "average"}, {"name": "Concatenate", "value": "concatenate"}, {"name": "Count", "value": "count"},
+             {"name": "Count Unique", "value": "countUnique"}, {"name": "Max", "value": "max"}, {"name": "Min", "value": "min"}, {"name": "Sum", "value": "sum"}]},
+           {"displayName": "Field", "name": "field", "type": "string", "default": ""},
+           {"displayName": "Separator", "name": "separateBy", "type": "options", "default": ",", "displayOptions": {"show": {"aggregation": ["concatenate"]}}, "options": [
+             {"name": "Comma", "value": ","}, {"name": "Comma and Space", "value": ", "}, {"name": "New Line", "value": "\\n"}, {"name": "None", "value": ""}, {"name": "Space", "value": " "}, {"name": "Other", "value": "other"}]},
+           {"displayName": "Custom Separator", "name": "customSeparator", "type": "string", "default": "", "displayOptions": {"show": {"separateBy": ["other"]}}}]}]},
+        {"displayName": "Fields to Split By", "name": "fieldsToSplitBy", "type": "string", "default": "", "placeholder": "e.g. country, city"}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.renameKeys", "displayName": "Rename Keys", "group": ["transform"], "category": "Data transformation",
+      "icon": "tag", "color": "#772244", "version": 1, "defaults": {"name": "Rename Keys"},
+      "description": "Update item field names", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Keys", "name": "keys", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"key": []}, "placeholder": "Add new key",
+         "options": [{"name": "key", "displayName": "Key", "values": [{"displayName": "Current Key Name", "name": "currentKey", "type": "string", "default": ""}, {"displayName": "New Key Name", "name": "newKey", "type": "string", "default": ""}]}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.dateTime", "displayName": "Date & Time", "group": ["transform"], "category": "Data transformation",
+      "icon": "calendar", "color": "#408000", "version": 2, "defaults": {"name": "Date & Time"},
+      "description": "Manipulate date and time values", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "getCurrentDate", "options": [
+          {"name": "Add to a Date", "value": "addToDate"}, {"name": "Extract Part of a Date", "value": "extractDate"}, {"name": "Format a Date", "value": "formatDate"},
+          {"name": "Get Current Date", "value": "getCurrentDate"}, {"name": "Get Time Between Dates", "value": "getTimeBetweenDates"}, {"name": "Round a Date", "value": "roundDate"},
+          {"name": "Subtract From a Date", "value": "subtractFromDate"}]},
+        {"displayName": "Include Current Time", "name": "includeTime", "type": "boolean", "default": true, "displayOptions": {"show": {"operation": ["getCurrentDate"]}}},
+        {"displayName": "Date to Add To", "name": "magnitude", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["addToDate", "subtractFromDate"]}}},
+        {"displayName": "Time Unit", "name": "timeUnit", "type": "options", "default": "days", "displayOptions": {"show": {"operation": ["addToDate", "subtractFromDate"]}}, "options": [
+          {"name": "Years", "value": "years"}, {"name": "Quarters", "value": "quarters"}, {"name": "Months", "value": "months"}, {"name": "Weeks", "value": "weeks"},
+          {"name": "Days", "value": "days"}, {"name": "Hours", "value": "hours"}, {"name": "Minutes", "value": "minutes"}, {"name": "Seconds", "value": "seconds"}, {"name": "Milliseconds", "value": "milliseconds"}]},
+        {"displayName": "Duration", "name": "duration", "type": "number", "default": 0, "displayOptions": {"show": {"operation": ["addToDate", "subtractFromDate"]}}},
+        {"displayName": "Date", "name": "date", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["formatDate", "extractDate", "roundDate"]}}},
+        {"displayName": "Format", "name": "format", "type": "options", "default": "MM/dd/yyyy", "displayOptions": {"show": {"operation": ["formatDate"]}}, "options": [
+          {"name": "Custom Format", "value": "custom"}, {"name": "MM/DD/YYYY", "value": "MM/dd/yyyy"}, {"name": "YYYY/MM/DD", "value": "yyyy/MM/dd"},
+          {"name": "MMMM DD YYYY", "value": "MMMM dd yyyy"}, {"name": "MM-DD-YYYY", "value": "MM-dd-yyyy"}, {"name": "YYYY-MM-DD", "value": "yyyy-MM-dd"},
+          {"name": "Unix Timestamp", "value": "X"}]},
+        {"displayName": "Custom Format", "name": "customFormat", "type": "string", "default": "", "placeholder": "yyyy-MM-dd HH:mm", "displayOptions": {"show": {"operation": ["formatDate"], "format": ["custom"]}}},
+        {"displayName": "Start Date", "name": "startDate", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["getTimeBetweenDates"]}}},
+        {"displayName": "End Date", "name": "endDate", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["getTimeBetweenDates"]}}},
+        {"displayName": "Units", "name": "units", "type": "multiOptions", "default": ["day"], "displayOptions": {"show": {"operation": ["getTimeBetweenDates"]}}, "options": [
+          {"name": "Year", "value": "year"}, {"name": "Month", "value": "month"}, {"name": "Week", "value": "week"}, {"name": "Day", "value": "day"},
+          {"name": "Hour", "value": "hour"}, {"name": "Minute", "value": "minute"}, {"name": "Second", "value": "second"}, {"name": "Millisecond", "value": "millisecond"}]},
+        {"displayName": "Part", "name": "part", "type": "options", "default": "month", "displayOptions": {"show": {"operation": ["extractDate"]}}, "options": [
+          {"name": "Year", "value": "year"}, {"name": "Month", "value": "month"}, {"name": "Week", "value": "week"}, {"name": "Day", "value": "day"},
+          {"name": "Hour", "value": "hour"}, {"name": "Minute", "value": "minute"}, {"name": "Second", "value": "second"}]},
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "roundDown", "displayOptions": {"show": {"operation": ["roundDate"]}}, "options": [{"name": "Round Down", "value": "roundDown"}, {"name": "Round Up", "value": "roundUp"}]},
+        {"displayName": "To Nearest", "name": "toNearest", "type": "options", "default": "day", "displayOptions": {"show": {"operation": ["roundDate"]}}, "options": [
+          {"name": "Year", "value": "year"}, {"name": "Month", "value": "month"}, {"name": "Week", "value": "week"}, {"name": "Day", "value": "day"},
+          {"name": "Hour", "value": "hour"}, {"name": "Minute", "value": "minute"}, {"name": "Second", "value": "second"}]},
+        {"displayName": "Output Field Name", "name": "outputFieldName", "type": "string", "default": ""},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Timezone", "name": "timezone", "type": "string", "default": "", "placeholder": "e.g. Europe/Berlin"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.crypto", "displayName": "Crypto", "group": ["transform"], "category": "Data transformation",
+      "icon": "lock", "color": "#408000", "version": 1, "defaults": {"name": "Crypto"},
+      "description": "Provide cryptographic utilities", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Action", "name": "action", "type": "options", "default": "hash", "options": [
+          {"name": "Generate", "value": "generate", "description": "Generate random string"}, {"name": "Hash", "value": "hash"}, {"name": "Hmac", "value": "hmac"}]},
+        {"displayName": "Type", "name": "type", "type": "options", "default": "MD5", "displayOptions": {"show": {"action": ["hash", "hmac"]}}, "options": [
+          {"name": "MD5", "value": "MD5"}, {"name": "SHA1", "value": "SHA1"}, {"name": "SHA256", "value": "SHA256"}, {"name": "SHA384", "value": "SHA384"}, {"name": "SHA512", "value": "SHA512"}]},
+        {"displayName": "Value", "name": "value", "type": "string", "default": "", "displayOptions": {"show": {"action": ["hash", "hmac"]}}},
+        {"displayName": "Secret", "name": "secret", "type": "string", "typeOptions": {"password": true}, "default": "", "displayOptions": {"show": {"action": ["hmac"]}}},
+        {"displayName": "Encoding", "name": "encoding", "type": "options", "default": "hex", "displayOptions": {"show": {"action": ["hash", "hmac"]}}, "options": [{"name": "BASE64", "value": "base64"}, {"name": "HEX", "value": "hex"}]},
+        {"displayName": "Type", "name": "encodingType", "type": "options", "default": "uuid", "displayOptions": {"show": {"action": ["generate"]}}, "options": [
+          {"name": "ASCII", "value": "ascii"}, {"name": "BASE64", "value": "base64"}, {"name": "HEX", "value": "hex"}, {"name": "UUID", "value": "uuid"}]},
+        {"displayName": "Length", "name": "stringLength", "type": "number", "default": 32, "displayOptions": {"show": {"action": ["generate"], "encodingType": ["ascii", "base64", "hex"]}}},
+        {"displayName": "Property Name", "name": "dataPropertyName", "type": "string", "default": "data"}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.html", "displayName": "HTML", "group": ["transform"], "category": "Data transformation",
+      "icon": "html", "color": "#333377", "version": 1.2, "defaults": {"name": "HTML"},
+      "description": "Extract content from HTML with CSS selectors", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "extractHtmlContent", "options": [{"name": "Extract HTML Content", "value": "extractHtmlContent"}]},
+        {"displayName": "Source Data", "name": "sourceData", "type": "options", "default": "json", "options": [{"name": "Binary", "value": "binary"}, {"name": "JSON", "value": "json"}]},
+        {"displayName": "JSON Property / Input Binary Field", "name": "dataPropertyName", "type": "string", "default": "data"},
+        {"displayName": "Extraction Values", "name": "extractionValues", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": []}, "placeholder": "Add Value",
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Key", "name": "key", "type": "string", "default": ""},
+           {"displayName": "CSS Selector", "name": "cssSelector", "type": "string", "default": "", "placeholder": ".price"},
+           {"displayName": "Return Value", "name": "returnValue", "type": "options", "default": "text", "options": [
+             {"name": "Attribute", "value": "attribute"}, {"name": "HTML", "value": "html"}, {"name": "Text", "value": "text"}, {"name": "Value", "value": "value"}]},
+           {"displayName": "Attribute", "name": "attribute", "type": "string", "default": "", "placeholder": "class", "displayOptions": {"show": {"returnValue": ["attribute"]}}},
+           {"displayName": "Return Array", "name": "returnArray", "type": "boolean", "default": false}]}]},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [{"displayName": "Trim Values", "name": "trimValues", "type": "boolean", "default": true}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.extractFromFile", "displayName": "Extract from File", "group": ["input"], "category": "Files",
+      "icon": "file", "color": "#7c5cff", "version": 1, "defaults": {"name": "Extract from File"},
+      "description": "Convert binary data to JSON", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "csv", "options": [
+          {"name": "Extract From CSV", "value": "csv"}, {"name": "Extract From JSON", "value": "fromJson"}, {"name": "Extract From Text File", "value": "text"},
+          {"name": "Extract From HTML", "value": "html"}, {"name": "Move File to Base64 String", "value": "binaryToPropery"}]},
+        {"displayName": "Input Binary Field", "name": "binaryPropertyName", "type": "string", "default": "data"},
+        {"displayName": "Destination Output Field", "name": "destinationKey", "type": "string", "default": "data", "displayOptions": {"hide": {"operation": ["csv"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"operation": ["csv"]}}, "options": [
+          {"displayName": "Delimiter", "name": "delimiter", "type": "string", "default": ","},
+          {"displayName": "Header Row", "name": "headerRow", "type": "boolean", "default": true}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.convertToFile", "displayName": "Convert to File", "group": ["input"], "category": "Files",
+      "icon": "file", "color": "#7c5cff", "version": 1.1, "defaults": {"name": "Convert to File"},
+      "description": "Convert JSON data to binary data", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "csv", "options": [
+          {"name": "Convert to CSV", "value": "csv"}, {"name": "Convert to JSON", "value": "toJson"}, {"name": "Convert to Text File", "value": "toText"}, {"name": "Move Base64 String to File", "value": "toBinary"},
+          {"name": "Convert to iCal (event file)", "value": "iCal"}]},
+        {"displayName": "Event Title", "name": "title", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["iCal"]}}},
+        {"displayName": "Start", "name": "start", "type": "string", "default": "", "placeholder": "2026-12-24T18:00:00+01:00", "displayOptions": {"show": {"operation": ["iCal"]}}},
+        {"displayName": "End", "name": "end", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["iCal"]}}},
+        {"displayName": "All Day", "name": "allDay", "type": "boolean", "default": false, "displayOptions": {"show": {"operation": ["iCal"]}}},
+        {"displayName": "Additional Fields", "name": "additionalFields", "type": "collection", "default": {}, "placeholder": "Add Field", "displayOptions": {"show": {"operation": ["iCal"]}}, "options": [
+          {"displayName": "Description", "name": "description", "type": "string", "default": ""}, {"displayName": "Location", "name": "location", "type": "string", "default": ""}, {"displayName": "URL", "name": "url", "type": "string", "default": ""}]},
+        {"displayName": "Mode", "name": "mode", "type": "options", "default": "allItems", "displayOptions": {"show": {"operation": ["toJson"]}}, "options": [{"name": "All Items to One File", "value": "allItems"}, {"name": "Each Item to Separate File", "value": "each"}]},
+        {"displayName": "Text Input Field", "name": "sourceProperty", "type": "string", "default": "data", "displayOptions": {"show": {"operation": ["toText", "toBinary"]}}},
+        {"displayName": "Put Output File in Field", "name": "binaryPropertyName", "type": "string", "default": "data"},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "File Name", "name": "fileName", "type": "string", "default": ""},
+          {"displayName": "Delimiter", "name": "delimiter", "type": "string", "default": ","},
+          {"displayName": "Header Row", "name": "headerRow", "type": "boolean", "default": true},
+          {"displayName": "Pretty Print", "name": "format", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.readWriteFile", "displayName": "Read/Write Files from Disk", "group": ["input"], "category": "Files",
+      "icon": "file", "color": "#7c5cff", "version": 1, "defaults": {"name": "Read/Write Files from Disk"},
+      "description": "Read or write files inside the configured files directory", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "read", "options": [{"name": "Read File(s) From Disk", "value": "read"}, {"name": "Write File to Disk", "value": "write"}]},
+        {"displayName": "File Path", "name": "fileSelector", "type": "string", "default": "", "placeholder": "reports/today.csv", "displayOptions": {"show": {"operation": ["read"]}}},
+        {"displayName": "File Path and Name", "name": "fileName", "type": "string", "default": "", "placeholder": "reports/out.csv", "displayOptions": {"show": {"operation": ["write"]}}},
+        {"displayName": "Input Binary Field", "name": "dataPropertyName", "type": "string", "default": "data", "displayOptions": {"show": {"operation": ["write"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Append", "name": "append", "type": "boolean", "default": false},
+          {"displayName": "Put Output File in Field", "name": "dataPropertyName", "type": "string", "default": "data"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.rssFeedRead", "displayName": "RSS Read", "group": ["input"], "category": "Core",
+      "icon": "rss", "color": "#f26522", "version": 1.1, "defaults": {"name": "RSS Read"},
+      "description": "Reads data from an RSS or Atom feed", "inputs": 1, "outputs": [""],
+      "properties": [{"displayName": "URL", "name": "url", "type": "string", "default": "", "placeholder": "https://example.com/feed.xml", "required": true}]
+    },
+    {
+      "name": "n8n-nodes-base.emailSend", "displayName": "Send Email", "group": ["output"], "category": "Communication",
+      "icon": "mail", "color": "#00bb88", "version": 2.1, "defaults": {"name": "Send Email"},
+      "description": "Sends an email using SMTP protocol", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "smtp", "required": true}],
+      "properties": [
+        {"displayName": "From Email", "name": "fromEmail", "type": "string", "default": "", "placeholder": "Name <admin@example.com>", "required": true},
+        {"displayName": "To Email", "name": "toEmail", "type": "string", "default": "", "placeholder": "info@example.com, other@example.com", "required": true},
+        {"displayName": "Subject", "name": "subject", "type": "string", "default": ""},
+        {"displayName": "Email Format", "name": "emailFormat", "type": "options", "default": "text", "options": [{"name": "Text", "value": "text"}, {"name": "HTML", "value": "html"}, {"name": "Both", "value": "both"}]},
+        {"displayName": "Text", "name": "text", "type": "string", "typeOptions": {"rows": 5}, "default": "", "displayOptions": {"show": {"emailFormat": ["text", "both"]}}},
+        {"displayName": "HTML", "name": "html", "type": "string", "typeOptions": {"rows": 5}, "default": "", "displayOptions": {"show": {"emailFormat": ["html", "both"]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "CC Email", "name": "ccEmail", "type": "string", "default": ""},
+          {"displayName": "BCC Email", "name": "bccEmail", "type": "string", "default": ""},
+          {"displayName": "Reply To", "name": "replyTo", "type": "string", "default": ""},
+          {"displayName": "Ignore SSL Issues (Insecure)", "name": "allowUnauthorizedCerts", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.postgres", "displayName": "Postgres", "group": ["input"], "category": "Data & Storage",
+      "icon": "database", "color": "#336791", "version": 2.5, "defaults": {"name": "Postgres"},
+      "description": "Get, add and update data in Postgres", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "postgres", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "executeQuery", "options": [
+          {"name": "Execute Query", "value": "executeQuery"}, {"name": "Insert", "value": "insert"}, {"name": "Insert or Update", "value": "upsert"},
+          {"name": "Select", "value": "select"}, {"name": "Delete All Rows (Truncate)", "value": "deleteTable"}]},
+        {"displayName": "Query", "name": "query", "type": "string", "typeOptions": {"rows": 5, "editor": "sqlEditor"}, "default": "", "placeholder": "SELECT id, name FROM product WHERE quantity > $1 AND price <= $2", "displayOptions": {"show": {"operation": ["executeQuery"]}}},
+        {"displayName": "Schema", "name": "schema", "type": "string", "default": "public", "displayOptions": {"hide": {"operation": ["executeQuery"]}}},
+        {"displayName": "Table", "name": "table", "type": "string", "default": "", "displayOptions": {"hide": {"operation": ["executeQuery"]}}},
+        {"displayName": "Columns", "name": "columns", "type": "collection", "default": {"mappingMode": "autoMapInputData"}, "displayOptions": {"show": {"operation": ["insert", "upsert"]}}, "options": [
+          {"displayName": "Mapping Mode", "name": "mappingMode", "type": "options", "default": "autoMapInputData", "options": [{"name": "Map Automatically", "value": "autoMapInputData"}, {"name": "Map Each Column Manually", "value": "defineBelow"}]},
+          {"displayName": "Values (JSON)", "name": "value", "type": "json", "default": "{}"},
+          {"displayName": "Column to Match On", "name": "matchingColumns", "type": "string", "default": "id"}]},
+        {"displayName": "Return All", "name": "returnAll", "type": "boolean", "default": false, "displayOptions": {"show": {"operation": ["select"]}}},
+        {"displayName": "Limit", "name": "limit", "type": "number", "default": 50, "displayOptions": {"show": {"operation": ["select"], "returnAll": [false]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"operation": ["executeQuery"]}}, "options": [
+          {"displayName": "Query Parameters", "name": "queryReplacement", "type": "string", "default": "", "description": "Comma-separated values for $1, $2, ... (safely escaped)"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.mySql", "displayName": "MySQL", "group": ["input"], "category": "Data & Storage",
+      "icon": "database", "color": "#4479a1", "version": 2.4, "defaults": {"name": "MySQL"},
+      "description": "Get, add and update data in MySQL or MariaDB", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "mySql", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "executeQuery", "options": [
+          {"name": "Execute SQL", "value": "executeQuery"}, {"name": "Insert", "value": "insert"}, {"name": "Insert or Update", "value": "upsert"},
+          {"name": "Select", "value": "select"}, {"name": "Delete All Rows (Truncate)", "value": "deleteTable"}]},
+        {"displayName": "Query", "name": "query", "type": "string", "typeOptions": {"rows": 5, "editor": "sqlEditor"}, "default": "", "placeholder": "SELECT id, name FROM product WHERE quantity > ? AND price <= ?", "displayOptions": {"show": {"operation": ["executeQuery"]}}},
+        {"displayName": "Table", "name": "table", "type": "string", "default": "", "displayOptions": {"hide": {"operation": ["executeQuery"]}}},
+        {"displayName": "Data Mode", "name": "dataMode", "type": "options", "default": "autoMapInputData", "displayOptions": {"show": {"operation": ["insert", "upsert"]}}, "options": [{"name": "Auto-Map Input Data to Columns", "value": "autoMapInputData"}, {"name": "Map Each Column Below", "value": "defineBelow"}]},
+        {"displayName": "Values (JSON)", "name": "valuesToSend", "type": "json", "default": "{}", "displayOptions": {"show": {"operation": ["insert", "upsert"], "dataMode": ["defineBelow"]}}},
+        {"displayName": "Return All", "name": "returnAll", "type": "boolean", "default": false, "displayOptions": {"show": {"operation": ["select"]}}},
+        {"displayName": "Limit", "name": "limit", "type": "number", "default": 50, "displayOptions": {"show": {"operation": ["select"], "returnAll": [false]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "displayOptions": {"show": {"operation": ["executeQuery"]}}, "options": [
+          {"displayName": "Query Parameters", "name": "queryReplacement", "type": "string", "default": "", "description": "Comma-separated values for the ? placeholders (sent as prepared statement parameters)"}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.mqtt", "displayName": "MQTT", "group": ["input"], "category": "Communication",
+      "icon": "redis", "color": "#9b27af", "version": 1, "defaults": {"name": "MQTT"},
+      "description": "Publish messages to an MQTT broker", "inputs": 1, "outputs": [""], "credentials": [{"name": "mqtt", "required": true}],
+      "properties": [
+        {"displayName": "Topic", "name": "topic", "type": "string", "default": "", "required": true},
+        {"displayName": "Send Input Data", "name": "sendInputData", "type": "boolean", "default": true, "description": "Send the item JSON as message"},
+        {"displayName": "Message", "name": "message", "type": "string", "default": "", "displayOptions": {"show": {"sendInputData": [false]}}},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "QoS", "name": "qos", "type": "options", "default": 0, "options": [{"name": "At Most Once (0)", "value": 0}, {"name": "At Least Once (1)", "value": 1}, {"name": "Exactly Once (2)", "value": 2}]},
+          {"displayName": "Retain", "name": "retain", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.redis", "displayName": "Redis", "group": ["input"], "category": "Data & Storage",
+      "icon": "redis", "color": "#d82c20", "version": 1, "defaults": {"name": "Redis"},
+      "description": "Get, send and update data in Redis", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "redis", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "info", "options": [
+          {"name": "Delete", "value": "delete"}, {"name": "Get", "value": "get"}, {"name": "Increment", "value": "incr"}, {"name": "Info", "value": "info"},
+          {"name": "Keys", "value": "keys"}, {"name": "Pop", "value": "pop"}, {"name": "Publish", "value": "publish"}, {"name": "Push", "value": "push"}, {"name": "Set", "value": "set"}]},
+        {"displayName": "Key", "name": "key", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["delete", "get", "incr", "set"]}}},
+        {"displayName": "Name", "name": "propertyName", "type": "string", "default": "propertyName", "displayOptions": {"show": {"operation": ["get", "pop"]}}},
+        {"displayName": "Value", "name": "value", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["set"]}}},
+        {"displayName": "Expire", "name": "expire", "type": "boolean", "default": false, "displayOptions": {"show": {"operation": ["set", "incr"]}}},
+        {"displayName": "TTL", "name": "ttl", "type": "number", "default": 60, "displayOptions": {"show": {"operation": ["set", "incr"], "expire": [true]}}},
+        {"displayName": "Key Pattern", "name": "keyPattern", "type": "string", "default": "*", "displayOptions": {"show": {"operation": ["keys"]}}},
+        {"displayName": "Get Values", "name": "getValues", "type": "boolean", "default": true, "displayOptions": {"show": {"operation": ["keys"]}}},
+        {"displayName": "Channel", "name": "channel", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["publish"]}}},
+        {"displayName": "List", "name": "list", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["push", "pop"]}}},
+        {"displayName": "Data", "name": "messageData", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["publish", "push"]}}},
+        {"displayName": "Tail", "name": "tail", "type": "boolean", "default": false, "displayOptions": {"show": {"operation": ["push", "pop"]}}}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.slack", "displayName": "Slack", "group": ["output"], "category": "Communication",
+      "icon": "slack", "color": "#4a154b", "version": 2.2, "defaults": {"name": "Slack"},
+      "description": "Send messages to Slack", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "slackApi", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "post", "options": [{"name": "Send Message", "value": "post"}]},
+        {"displayName": "Send Message To", "name": "select", "type": "options", "default": "channel", "options": [{"name": "Channel", "value": "channel"}, {"name": "User", "value": "user"}]},
+        {"displayName": "Channel", "name": "channelId", "type": "string", "default": "", "placeholder": "#general or C0123456", "displayOptions": {"show": {"select": ["channel"]}}},
+        {"displayName": "User", "name": "user", "type": "string", "default": "", "placeholder": "U0123456", "displayOptions": {"show": {"select": ["user"]}}},
+        {"displayName": "Message Text", "name": "text", "type": "string", "typeOptions": {"rows": 3}, "default": ""}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.telegram", "displayName": "Telegram", "group": ["output"], "category": "Communication",
+      "icon": "telegram", "color": "#229ed9", "version": 1.2, "defaults": {"name": "Telegram"},
+      "description": "Sends data to Telegram", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "telegramApi", "required": true}],
+      "properties": [
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "sendMessage", "options": [
+          {"name": "Send Message", "value": "sendMessage"}, {"name": "Send Chat Action", "value": "sendChatAction"}, {"name": "Edit Message Text", "value": "editMessageText"}, {"name": "Delete Message", "value": "deleteMessage"}]},
+        {"displayName": "Chat ID", "name": "chatId", "type": "string", "default": "", "required": true},
+        {"displayName": "Text", "name": "text", "type": "string", "typeOptions": {"rows": 3}, "default": "", "displayOptions": {"show": {"operation": ["sendMessage", "editMessageText"]}}},
+        {"displayName": "Message ID", "name": "messageId", "type": "string", "default": "", "displayOptions": {"show": {"operation": ["editMessageText", "deleteMessage"]}}},
+        {"displayName": "Action", "name": "action", "type": "options", "default": "typing", "displayOptions": {"show": {"operation": ["sendChatAction"]}}, "options": [{"name": "Typing", "value": "typing"}, {"name": "Upload Photo", "value": "upload_photo"}]},
+        {"displayName": "Additional Fields", "name": "additionalFields", "type": "collection", "default": {}, "placeholder": "Add Field", "options": [
+          {"displayName": "Parse Mode", "name": "parse_mode", "type": "options", "default": "HTML", "options": [{"name": "HTML", "value": "HTML"}, {"name": "Markdown (Legacy)", "value": "Markdown"}, {"name": "MarkdownV2", "value": "MarkdownV2"}]},
+          {"displayName": "Disable Notification", "name": "disable_notification", "type": "boolean", "default": false},
+          {"displayName": "Disable WebPage Preview", "name": "disable_web_page_preview", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.discord", "displayName": "Discord", "group": ["output"], "category": "Communication",
+      "icon": "discord", "color": "#5865f2", "version": 2, "defaults": {"name": "Discord"},
+      "description": "Sends messages through a Discord webhook", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "discordWebhookApi", "required": true}],
+      "properties": [
+        {"displayName": "Message", "name": "content", "type": "string", "typeOptions": {"rows": 3}, "default": ""},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Username", "name": "username", "type": "string", "default": ""},
+          {"displayName": "Avatar URL", "name": "avatar_url", "type": "string", "default": ""},
+          {"displayName": "TTS", "name": "tts", "type": "boolean", "default": false}]}
+      ]
+    },
+    {
+      "name": "@n8n/n8n-nodes-langchain.openAi", "displayName": "OpenAI", "group": ["transform"], "category": "AI",
+      "icon": "sparkle", "color": "#10a37f", "version": 1.8, "defaults": {"name": "OpenAI"},
+      "description": "Message a chat model (OpenAI or any OpenAI-compatible API such as Ollama)", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "openAiApi", "required": true}],
+      "properties": [
+        {"displayName": "Resource", "name": "resource", "type": "options", "default": "text", "options": [{"name": "Text", "value": "text"}]},
+        {"displayName": "Operation", "name": "operation", "type": "options", "default": "message", "options": [{"name": "Message a Model", "value": "message"}]},
+        {"displayName": "Model", "name": "modelId", "type": "resourceLocator", "default": {"__rl": true, "value": "gpt-4o-mini", "mode": "id"}},
+        {"displayName": "Messages", "name": "messages", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": [{"content": ""}]},
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Text", "name": "content", "type": "string", "typeOptions": {"rows": 3}, "default": ""},
+           {"displayName": "Role", "name": "role", "type": "options", "default": "user", "options": [{"name": "User", "value": "user"}, {"name": "Assistant", "value": "assistant"}, {"name": "System", "value": "system"}]}]}]},
+        {"displayName": "Simplify Output", "name": "simplify", "type": "boolean", "default": true},
+        {"displayName": "Output Content as JSON", "name": "jsonOutput", "type": "boolean", "default": false},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "Maximum Number of Tokens", "name": "maxTokens", "type": "number", "default": 1024},
+          {"displayName": "Output Randomness (Temperature)", "name": "temperature", "type": "number", "default": 1}]}
+      ]
+    },
+    {
+      "name": "@n8n/n8n-nodes-langchain.anthropic", "displayName": "Anthropic", "group": ["transform"], "category": "AI",
+      "icon": "sparkle", "color": "#d97757", "version": 1, "defaults": {"name": "Anthropic"},
+      "description": "Message a Claude model", "inputs": 1, "outputs": [""],
+      "credentials": [{"name": "anthropicApi", "required": true}],
+      "properties": [
+        {"displayName": "Model", "name": "modelId", "type": "resourceLocator", "default": {"__rl": true, "value": "claude-sonnet-5-5", "mode": "id"}},
+        {"displayName": "Messages", "name": "messages", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {"values": [{"content": ""}]},
+         "options": [{"name": "values", "displayName": "Values", "values": [
+           {"displayName": "Prompt", "name": "content", "type": "string", "typeOptions": {"rows": 3}, "default": ""},
+           {"displayName": "Role", "name": "role", "type": "options", "default": "user", "options": [{"name": "User", "value": "user"}, {"name": "Assistant", "value": "assistant"}]}]}]},
+        {"displayName": "Simplify Output", "name": "simplify", "type": "boolean", "default": true},
+        {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add Option", "options": [
+          {"displayName": "System Message", "name": "system", "type": "string", "typeOptions": {"rows": 3}, "default": ""},
+          {"displayName": "Maximum Number of Tokens", "name": "maxTokens", "type": "number", "default": 4096},
+          {"displayName": "Temperature", "name": "temperature", "type": "number", "default": 1}]}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.executeCommand", "displayName": "Execute Command", "group": ["transform"], "category": "Core",
+      "icon": "terminal", "color": "#886644", "version": 1, "defaults": {"name": "Execute Command"},
+      "description": "Executes a shell command on the host (requires FLOWWOLF_ENABLE_EXECUTE_COMMAND=true)", "inputs": 1, "outputs": [""],
+      "properties": [
+        {"displayName": "Execute Once", "name": "executeOnce", "type": "boolean", "default": true},
+        {"displayName": "Command", "name": "command", "type": "string", "typeOptions": {"rows": 5}, "default": "", "placeholder": "echo \"test\""}
+      ]
+    },
+    {
+      "name": "n8n-nodes-base.stickyNote", "displayName": "Sticky Note", "group": ["input"], "category": "Core", "hidden": true,
+      "icon": "note", "color": "#ffd233", "version": 1, "defaults": {"name": "Sticky Note"},
+      "description": "Make your workflow easier to understand", "inputs": 0, "outputs": [],
+      "properties": [{"displayName": "Content", "name": "content", "type": "string", "typeOptions": {"rows": 6}, "default": "## Note\nDouble click to edit"}]
+    }
+  ],
+  "credentials": [
+    {"name": "httpBasicAuth", "displayName": "Basic Auth", "properties": [
+      {"displayName": "User", "name": "user", "type": "string", "default": ""},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "httpHeaderAuth", "displayName": "Header Auth", "properties": [
+      {"displayName": "Name", "name": "name", "type": "string", "default": "", "placeholder": "X-API-Key"},
+      {"displayName": "Value", "name": "value", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "httpQueryAuth", "displayName": "Query Auth", "properties": [
+      {"displayName": "Name", "name": "name", "type": "string", "default": ""},
+      {"displayName": "Value", "name": "value", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "httpBearerAuth", "displayName": "Bearer Auth", "properties": [
+      {"displayName": "Bearer Token", "name": "token", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "httpCustomAuth", "displayName": "Custom Auth", "properties": [
+      {"displayName": "JSON", "name": "json", "type": "json", "typeOptions": {"password": true}, "default": "{\n  \"headers\": {\"X-AUTH\": \"secret\"},\n  \"qs\": {}\n}"}]},
+    {"name": "smtp", "displayName": "SMTP", "properties": [
+      {"displayName": "User", "name": "user", "type": "string", "default": ""},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Host", "name": "host", "type": "string", "default": ""},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 465},
+      {"displayName": "SSL/TLS", "name": "secure", "type": "boolean", "default": true},
+      {"displayName": "Disable STARTTLS", "name": "disableStartTls", "type": "boolean", "default": false, "displayOptions": {"show": {"secure": [false]}}}]},
+    {"name": "postgres", "displayName": "Postgres", "properties": [
+      {"displayName": "Host", "name": "host", "type": "string", "default": "localhost"},
+      {"displayName": "Database", "name": "database", "type": "string", "default": "postgres"},
+      {"displayName": "User", "name": "user", "type": "string", "default": "postgres"},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 5432},
+      {"displayName": "SSL", "name": "ssl", "type": "options", "default": "disable", "options": [{"name": "Disable", "value": "disable"}, {"name": "Require", "value": "require"}]},
+      {"displayName": "Ignore SSL Issues (Insecure)", "name": "allowUnauthorizedCerts", "type": "boolean", "default": false, "displayOptions": {"show": {"ssl": ["require"]}}}]},
+    {"name": "mqtt", "displayName": "MQTT", "properties": [
+      {"displayName": "Host", "name": "host", "type": "string", "default": ""},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 1883},
+      {"displayName": "Username", "name": "username", "type": "string", "default": ""},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Client ID", "name": "clientId", "type": "string", "default": ""},
+      {"displayName": "Clean Session", "name": "clean", "type": "boolean", "default": true}]},
+    {"name": "imap", "displayName": "IMAP", "properties": [
+      {"displayName": "User", "name": "user", "type": "string", "default": ""},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Host", "name": "host", "type": "string", "default": ""},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 993},
+      {"displayName": "SSL/TLS", "name": "secure", "type": "boolean", "default": true},
+      {"displayName": "Allow Self-Signed Certificates", "name": "allowUnauthorizedCerts", "type": "boolean", "default": false}]},
+    {"name": "jwtAuth", "displayName": "JWT Auth", "properties": [
+      {"displayName": "Secret", "name": "secret", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Algorithm", "name": "algorithm", "type": "options", "default": "HS256", "options": [{"name": "HS256", "value": "HS256"}, {"name": "HS384", "value": "HS384"}, {"name": "HS512", "value": "HS512"}]}]},
+    {"name": "totpApi", "displayName": "TOTP", "properties": [
+      {"displayName": "Secret (Base32)", "name": "secret", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Label", "name": "label", "type": "string", "default": ""}]},
+    {"name": "mySql", "displayName": "MySQL", "properties": [
+      {"displayName": "Host", "name": "host", "type": "string", "default": "localhost"},
+      {"displayName": "Database", "name": "database", "type": "string", "default": "mysql"},
+      {"displayName": "User", "name": "user", "type": "string", "default": "mysql"},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 3306},
+      {"displayName": "SSL", "name": "ssl", "type": "boolean", "default": false},
+      {"displayName": "Ignore SSL Issues (Insecure)", "name": "allowUnauthorizedCerts", "type": "boolean", "default": false, "displayOptions": {"show": {"ssl": [true]}}}]},
+    {"name": "redis", "displayName": "Redis", "properties": [
+      {"displayName": "Host", "name": "host", "type": "string", "default": "localhost"},
+      {"displayName": "Port", "name": "port", "type": "number", "default": 6379},
+      {"displayName": "User", "name": "user", "type": "string", "default": ""},
+      {"displayName": "Password", "name": "password", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Database Number", "name": "database", "type": "number", "default": 0}]},
+    {"name": "slackApi", "displayName": "Slack API", "properties": [
+      {"displayName": "Access Token", "name": "accessToken", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "telegramApi", "displayName": "Telegram API", "properties": [
+      {"displayName": "Access Token", "name": "accessToken", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Base URL", "name": "baseUrl", "type": "string", "default": "https://api.telegram.org"}]},
+    {"name": "discordWebhookApi", "displayName": "Discord Webhook", "properties": [
+      {"displayName": "Webhook URL", "name": "webhookUri", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "openAiApi", "displayName": "OpenAI", "properties": [
+      {"displayName": "API Key", "name": "apiKey", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Base URL", "name": "url", "type": "string", "default": "https://api.openai.com/v1"}]},
+    {"name": "anthropicApi", "displayName": "Anthropic", "properties": [
+      {"displayName": "API Key", "name": "apiKey", "type": "string", "typeOptions": {"password": true}, "default": ""},
+      {"displayName": "Base URL", "name": "url", "type": "string", "default": "https://api.anthropic.com"}]},
+    {"name": "githubApi", "displayName": "GitHub API", "properties": [
+      {"displayName": "Access Token", "name": "accessToken", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "notionApi", "displayName": "Notion API", "properties": [
+      {"displayName": "Internal Integration Secret", "name": "apiKey", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "airtableTokenApi", "displayName": "Airtable Personal Access Token", "properties": [
+      {"displayName": "Access Token", "name": "accessToken", "type": "string", "typeOptions": {"password": true}, "default": ""}]},
+    {"name": "stripeApi", "displayName": "Stripe API", "properties": [
+      {"displayName": "Secret Key", "name": "secretKey", "type": "string", "typeOptions": {"password": true}, "default": ""}]}
+  ]
+}

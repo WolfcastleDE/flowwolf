@@ -1,0 +1,35 @@
+name: Integration or node request
+description: A missing service, node, operation or option
+labels: ["integration", "triage"]
+body:
+  - type: input
+    id: service
+    attributes:
+      label: Service or node
+      placeholder: e.g. Google Sheets, Odoo, Shopware
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is missing?
+      options:
+        - A new node / service
+        - An operation of an existing node
+        - An option or parameter
+        - A trigger
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which operations or options do you need? Link the API docs if you have them.
+    validations:
+      required: true
+  - type: textarea
+    id: n8n
+    attributes:
+      label: n8n workflow using it (optional)
+      description: An exported n8n workflow helps us keep parameter names compatible.
+      render: json

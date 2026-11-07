@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flowwolf · Workflow automation on one small binary</title>
+<meta name="description" content="Flowwolf runs n8n workflows on a single Rust binary: same JSON, same expressions, same API, a fraction of the footprint. Open source, MIT licensed.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/instrument-sans-wdth.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("/fonts/instrument-sans-wdth.woff2") format("woff2");
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+:root {
+  --bg: #f5f6f8;
+  --panel: #ffffff;
+  --ink: #16181d;
+  --muted: #5a6170;
+  --rule: #e2e5ea;
+  --wire: #2f5bea;
+  --ok: #1e9e5a;
+  --wrap: 1120px;
+  --gutter: 24px;
+  --rail: 72px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 17px/1.6 "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+a { color: inherit; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--wire); outline-offset: 3px; border-radius: 4px; }
+code, pre { font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace; font-size: .88em; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* ---------- header ---------- */
+.bar { position: sticky; top: 0; z-index: 10; background: rgba(245, 246, 248, .86); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--rule); }
+.bar .wrap { display: flex; align-items: center; gap: 32px; height: 60px; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 640; font-size: 17px; letter-spacing: -.01em; text-decoration: none; }
+.logo svg { width: 22px; height: 22px; }
+.bar nav { display: flex; gap: 26px; margin-left: auto; font-size: 15px; color: var(--muted); }
+.bar nav a { text-decoration: none; }
+.bar nav a:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 8px; background: var(--ink); color: #fff; font: 560 15px/1 inherit; font-family: inherit; text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: #2a2e37; }
+.btn.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule); }
+.btn.quiet:hover { background: var(--panel); }
+
+/* ---------- hero ---------- */
+.hero { padding: 88px 0 0; }
+h1 {
+  margin: 0; max-width: 14ch;
+  font-weight: 620; font-stretch: 82%; font-size: clamp(44px, 7.4vw, 92px); line-height: .96; letter-spacing: -.035em;
+}
+.lede { max-width: 56ch; margin: 28px 0 0; font-size: 19px; line-height: 1.55; color: var(--muted); }
+.start { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+.cmd { display: flex; align-items: center; gap: 8px; min-width: 0; height: 40px; padding: 0 6px 0 14px; border-radius: 8px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--rule); }
+.cmd code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.cmd code::before { content: "$ "; color: var(--muted); }
+.cmd button { height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--bg); color: var(--ink); font: 500 13px/1 inherit; font-family: inherit; cursor: pointer; }
+.cmd button:hover { background: var(--rule); }
+
+/* the canvas: a real workflow as the product shot */
+.canvas { position: relative; margin: 64px 0 0; padding: 0; border-radius: 14px; background: var(--panel); box-shadow: 0 0 0 1px var(--rule), 0 24px 48px -32px rgba(22, 24, 29, .25); overflow: hidden; }
+.canvas .top { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 18px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.canvas .top b { font-weight: 600; }
+.canvas .top .state { margin-left: auto; color: var(--muted); font-size: 13px; }
+.canvas .top .state i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--ok); vertical-align: 1px; }
+.canvas svg.graph { display: block; width: 100%; height: auto; background-image: radial-gradient(#dfe2e7 1px, transparent 1px); background-size: 20px 20px; }
+.graph .node rect { fill: #fff; stroke: #cfd4dc; stroke-width: 1.5; }
+.graph .node .ic { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.graph .node text { font: 500 13px "Instrument Sans", system-ui, sans-serif; fill: var(--ink); text-anchor: middle; }
+.graph .node .tick { fill: var(--ok); }
+.graph .node .tick path { stroke: #fff; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.graph .wire { fill: none; stroke: var(--wire); stroke-width: 1.7; }
+.graph .wire.idle { stroke: #c4c9d2; stroke-dasharray: 4 5; }
+.graph .count { font: 500 11px "Instrument Sans", system-ui, sans-serif; fill: var(--muted); text-anchor: middle; }
+.graph .branch { font: 500 11px "Instrument Sans", system-ui, sans-serif; fill: var(--muted); }
+.canvas figcaption { display: flex; flex-wrap: wrap; gap: 8px 28px; padding: 14px 18px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--muted); }
+
+/* one orchestrated moment: the run travels through the graph once */
+@media (prefers-reduced-motion: no-preference) {
+  .graph .wire:not(.idle) { stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw .5s ease-out forwards; }
+  .graph .tick, .graph .count { opacity: 0; animation: show .25s ease-out forwards; }
+  .graph [data-step="1"] { animation-delay: .35s; } .graph [data-step="2"] { animation-delay: .7s; }
+  .graph [data-step="3"] { animation-delay: 1.05s; } .graph [data-step="4"] { animation-delay: 1.4s; }
+  .graph [data-step="5"] { animation-delay: 1.75s; } .graph [data-step="6"] { animation-delay: 2.1s; }
+  .graph [data-step="7"] { animation-delay: 2.45s; }
+  .canvas .top .state { opacity: 0; animation: show .3s ease-out 2.6s forwards; }
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes show { to { opacity: 1; } }
+
+/* ---------- the rail: one wire runs down the page, every section hangs on it ---------- */
+.flow { position: relative; padding-top: 24px; }
+.flow-wrap::before { content: ""; position: absolute; top: -24px; bottom: 148px; left: calc(var(--gutter) + 23px); width: 1.5px; background: var(--wire); }
+.flow-wrap > section { position: relative; padding: 96px 0 0 var(--rail); }
+.flow-wrap > section > h2::before {
+  content: ""; position: absolute; left: 17px; margin-top: .42em;
+  width: 13px; height: 13px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px var(--wire);
+}
+.flow-wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); position: relative; }
+h2 { margin: 0; max-width: 22ch; font-weight: 620; font-stretch: 86%; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.04; letter-spacing: -.025em; }
+.intro { max-width: 60ch; margin: 18px 0 0; color: var(--muted); }
+h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+
+/* feature list: two columns of plain entries separated by rules */
+.list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; margin: 44px 0 0; padding: 0; list-style: none; max-width: 980px; }
+.list li { padding: 22px 0 24px; border-top: 1px solid var(--rule); }
+.list p { margin: 6px 0 0; color: var(--muted); font-size: 16px; }
+
+/* carry-over checklist */
+.carry { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; margin-top: 44px; max-width: 980px; align-items: start; }
+.carry dl { margin: 0; }
+.carry dt { font-weight: 600; padding-top: 18px; border-top: 1px solid var(--rule); }
+.carry dd { margin: 4px 0 18px; color: var(--muted); font-size: 16px; }
+pre.block { margin: 0; padding: 20px 22px; border-radius: 12px; background: #16181d; color: #e7e9ee; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+pre.block .c { color: #8c93a1; }
+pre.block .s { color: #a9c1ff; }
+
+/* integrations as text columns */
+.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px 48px; margin-top: 44px; max-width: 980px; }
+.groups h3 { padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.groups p { margin: 12px 0 0; color: var(--muted); font-size: 15.5px; line-height: 1.75; }
+.note { max-width: 60ch; margin: 36px 0 0; font-size: 16px; color: var(--muted); }
+
+/* comparison */
+table { width: 100%; max-width: 980px; margin-top: 40px; border-collapse: collapse; font-size: 16px; }
+th, td { padding: 14px 16px 14px 0; text-align: left; vertical-align: top; border-top: 1px solid var(--rule); }
+th { font-weight: 600; }
+td:first-child { color: var(--muted); width: 30%; }
+td:nth-child(2) { font-weight: 560; }
+tr:first-child th { border-top: 0; padding-bottom: 10px; }
+
+/* faq */
+.faq { max-width: 760px; margin-top: 36px; }
+details { border-top: 1px solid var(--rule); }
+details:last-child { border-bottom: 1px solid var(--rule); }
+summary { display: flex; justify-content: space-between; gap: 24px; padding: 20px 0; font-weight: 560; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--muted); font-weight: 400; transition: transform .2s; }
+details[open] summary::after { transform: rotate(45deg); }
+details p { margin: -6px 0 22px; color: var(--muted); max-width: 64ch; }
+
+/* end of the wire */
+.end { padding: 96px 0 0 var(--rail); }
+.end .box { position: relative; max-width: 980px; padding: 40px; border-radius: 14px; background: var(--panel); box-shadow: 0 0 0 1px var(--rule); }
+.end .box::before { content: ""; position: absolute; left: calc(-1 * var(--rail) + 17px); top: 44px; width: 13px; height: 13px; border-radius: 50%; background: var(--wire); }
+.end h2 { max-width: none; }
+.end p { margin: 12px 0 28px; color: var(--muted); max-width: 52ch; }
+footer { margin-top: 96px; border-top: 1px solid var(--rule); }
+footer .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding-top: 28px; padding-bottom: 40px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 22px; }
+footer nav a { text-decoration: none; }
+footer nav a:hover { color: var(--ink); }
+footer .right { margin-left: auto; }
+
+@media (max-width: 860px) {
+  :root { --rail: 0px; --gutter: 20px; }
+  .bar nav { display: none; }
+  .bar .wrap { justify-content: space-between; }
+  .hero { padding-top: 56px; }
+  .lede { font-size: 17.5px; }
+  .canvas { margin-top: 44px; border-radius: 12px; }
+  .canvas .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .canvas svg.graph { min-width: 600px; }
+  .flow-wrap::before, .flow-wrap > section > h2::before, .end .box::before { display: none; }
+  .flow-wrap > section { padding-top: 72px; }
+  .list, .carry, .groups { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .carry { gap: 32px; }
+  .groups { gap: 28px; }
+  .end { padding-top: 72px; }
+  .end .box { padding: 28px 22px; }
+  td:first-child { width: 38%; }
+  .cmd { flex: 1 1 100%; }
+  footer .right { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="Flowwolf home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#16181d"/><path d="M6 7l3 4h6l3-4v7l-6 4-6-4z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      Flowwolf
+    </a>
+    <nav aria-label="Sections">
+      <a href="#bring">n8n workflows</a>
+      <a href="#inside">Features</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#compare">Compare</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn" href="/app/">Open the editor</a>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap">
+    <h1>Your n8n workflows on one small binary.</h1>
+    <p class="lede">Flowwolf runs the workflows you built in n8n with the same JSON, the same expressions and the same API, in a 105&nbsp;MB image that idles at about 5&nbsp;MB of memory. Open source, written in Rust.</p>
+    <div class="start">
+      <div class="cmd"><code id="cmd">docker run -p 5678:5678 -v flowwolf:/data flowwolf</code><button type="button" data-copy="#cmd">Copy</button></div>
+      <a class="btn quiet" href="/app/">Open the editor</a>
+    </div>
+
+    <figure class="canvas" aria-label="A workflow in the Flowwolf editor after a successful run">
+      <div class="top"><b>New lead → CRM and Slack</b><span class="state" aria-hidden="true"><i></i>Ran in 18 ms</span></div>
+      <div class="scroll"><svg class="graph" viewBox="44 14 760 272" role="img" aria-label="Webhook, Edit Fields and an If node; true goes to Postgres and Slack, false to Send Email">
+        <!-- wires -->
+        <path class="wire" data-step="1" d="M152 130 H240"/>
+        <path class="wire" data-step="2" d="M304 130 H392"/>
+        <path class="wire" data-step="3" d="M456 130 C500 130 500 70 544 70"/>
+        <path class="wire" data-step="5" d="M608 70 H696"/>
+        <path class="wire idle" d="M456 130 C500 130 500 210 544 210"/>
+        <text class="branch" x="486" y="88">true</text>
+        <text class="branch" x="484" y="190">false</text>
+        <!-- nodes -->
+        <g class="node" transform="translate(88 98)">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><circle cx="12" cy="6" r="3"/><path d="M9 17h6M7.5 14.5l3-6M16.5 14.5l-3-6"/></g>
+          <g class="tick" data-step="1"><circle cx="60" cy="4" r="9"/><path d="M56 4l3 3 5-6"/></g>
+          <text x="32" y="88">Webhook</text>
+        </g>
+        <text class="count" data-step="1" x="196" y="122">1 item</text>
+        <g class="node" transform="translate(240 98)">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></g>
+          <g class="tick" data-step="2"><circle cx="60" cy="4" r="9"/><path d="M56 4l3 3 5-6"/></g>
+          <text x="32" y="88">Edit Fields</text>
+        </g>
+        <text class="count" data-step="2" x="348" y="122">1 item</text>
+        <g class="node" transform="translate(392 98)">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-7 4-11 8"/></g>
+          <g class="tick" data-step="3"><circle cx="60" cy="4" r="9"/><path d="M56 4l3 3 5-6"/></g>
+          <text x="32" y="88">Business email?</text>
+        </g>
+        <g class="node" transform="translate(544 38)">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></g>
+          <g class="tick" data-step="4"><circle cx="60" cy="4" r="9"/><path d="M56 4l3 3 5-6"/></g>
+          <text x="32" y="88">Postgres</text>
+        </g>
+        <text class="count" data-step="5" x="652" y="62">1 item</text>
+        <g class="node" transform="translate(696 38)">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></g>
+          <g class="tick" data-step="6"><circle cx="60" cy="4" r="9"/><path d="M56 4l3 3 5-6"/></g>
+          <text x="32" y="88">Slack</text>
+        </g>
+        <g class="node" transform="translate(544 178)" opacity=".55">
+          <rect width="64" height="64" rx="14"/>
+          <g class="ic" transform="translate(20 20)"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></g>
+          <text x="32" y="88">Send Email</text>
+        </g>
+      </svg></div>
+      <figcaption>
+        <span>Docker image: ~105 MB</span>
+        <span>Memory at idle: about 5 MB</span>
+        <span>408 node types</span>
+        <span>MIT licensed</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="flow">
+<div class="flow-wrap">
+
+<section id="bring">
+  <h2>Bring the workflows you already have.</h2>
+  <p class="intro">Flowwolf reads the n8n workflow format as it is. Export from n8n, paste onto the canvas, activate.</p>
+  <div class="carry">
+    <dl>
+      <dt>Same nodes and parameters</dt>
+      <dd>Node types, settings, connections and pinned data are read without conversion. Unknown nodes are kept and reported when they run.</dd>
+      <dt>Same expressions</dt>
+      <dd><code>{{ $json.email }}</code>, <code>$('Node')</code>, <code>$input</code>, <code>$now</code> and <code>$vars</code> run in an embedded JavaScript sandbox.</dd>
+      <dt>Same API</dt>
+      <dd>Scripts that call <code>/api/v1</code> with an <code>X-N8N-API-KEY</code> header keep working.</dd>
+    </dl>
+<pre class="block"><span class="c"># import a workflow exported from n8n</span>
+curl localhost:5678/api/v1/workflows \
+  -H <span class="s">"X-N8N-API-KEY: $KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d @new-lead.json
+
+<span class="c"># and switch it on</span>
+curl -X POST \
+  localhost:5678/api/v1/workflows/<span class="s">$ID</span>/activate \
+  -H <span class="s">"X-N8N-API-KEY: $KEY"</span></pre>
+  </div>
+</section>
+
+<section id="inside">
+  <h2>Everything a workflow tool needs, in one process.</h2>
+  <p class="intro">Editor, engine, scheduler and webhooks run together. Back up one folder or point it at PostgreSQL.</p>
+  <ul class="list">
+    <li><h3>Visual editor</h3><p>Map fields from the input panel, pin test data and run single steps until the flow does what you want.</p></li>
+    <li><h3>JavaScript and Python</h3><p>The Code node runs JavaScript in QuickJS and Python in a separate runner process the kernel keeps away from files and network.</p></li>
+    <li><h3>Triggers</h3><p>Webhooks, forms, chat, schedules, mail, MQTT, Redis, RSS and file changes. Over forty service triggers register their webhook and verify signed events, and polling triggers watch Gmail, Sheets, Notion and more.</p></li>
+    <li><h3>AI agents</h3><p>n8n-style AI agents and chains with sub-nodes: twelve model providers, memory in Postgres or Redis, tools, MCP client and server, RAG with Qdrant, Pinecone, Supabase or PGVector.</p></li>
+    <li><h3>Teams</h3><p>Owners, admins and members. Share workflows and credentials as viewer or editor. Credentials are encrypted, OAuth2 connects in the browser.</p></li>
+    <li><h3>Executions you can read</h3><p>Every run keeps the data of each node. Open it on the canvas, find the failing step and retry. Waiting runs survive a restart.</p></li>
+    <li><h3>Source control</h3><p>Push and pull workflows to any Git server over SSH with a deploy key Flowwolf generates, or through the GitHub and Gitea APIs.</p></li>
+    <li><h3>Scale out</h3><p>Queue mode hands production runs to worker processes. With PostgreSQL the workers can run on other machines.</p></li>
+  </ul>
+</section>
+
+<section id="run">
+  <h2>Runs on a Raspberry Pi. Scales to a cluster.</h2>
+  <p class="intro">One container and one volume is a complete installation. Add workers and PostgreSQL when the load grows.</p>
+  <div class="carry">
+<pre class="block"><span class="c"># one machine</span>
+docker run -d --name flowwolf -p 5678:5678 \
+  -v flowwolf:/data \
+  -e GENERIC_TIMEZONE=<span class="s">Europe/Berlin</span> flowwolf
+
+<span class="c"># several machines: main plus workers on PostgreSQL</span>
+-e DB_TYPE=<span class="s">postgresdb</span> -e DB_POSTGRESDB_HOST=<span class="s">db</span> \
+-e EXECUTIONS_MODE=<span class="s">queue</span> -e FLOWWOLF_ENCRYPTION_KEY=<span class="s">…</span>
+docker run … flowwolf worker</pre>
+    <dl>
+      <dt>No runtime to manage</dt>
+      <dd>No Node.js, no npm, no Redis. The binary contains the editor, the engine and every node.</dd>
+      <dt>SQLite or PostgreSQL</dt>
+      <dd>SQLite in the data folder by default. PostgreSQL with the same variables n8n uses.</dd>
+      <dt>Workers that never double up</dt>
+      <dd>Jobs are claimed with row locks, so two workers never run the same execution.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="integrations">
+  <h2>408 node types, from Slack to AWS.</h2>
+  <p class="intro">Each one is a real node with operations and stored credentials. A selection:</p>
+  <div class="groups">
+    <div><h3>Communication</h3><p>Slack, Microsoft Teams, Discord, Telegram, WhatsApp, Mattermost, Matrix, Gmail, Outlook, SMTP and IMAP, Twilio, Postmark, SendGrid, Mailjet</p></div>
+    <div><h3>Data and storage</h3><p>PostgreSQL, MySQL, Redis, MQTT, Google Sheets, Excel 365, Airtable, Notion, Supabase, NocoDB, DynamoDB, Firestore, Google Cloud Storage</p></div>
+    <div><h3>Sales and support</h3><p>HubSpot, Salesforce, Pipedrive, Zoho CRM, Shopify, Shopware 6, WooCommerce, Stripe, Zendesk, Freshdesk, Intercom, Help Scout</p></div>
+    <div><h3>Developer and operations</h3><p>GitHub, GitLab, Bitbucket, Jira, Linear, Sentry, PagerDuty, Grafana, Jenkins, CircleCI, Cloudflare, Netlify, Okta</p></div>
+    <div><h3>AI</h3><p>AI Agent and chains with sub-nodes, twelve chat model providers, MCP client and server, vector stores in Qdrant, Pinecone, Supabase and PGVector</p></div>
+    <div><h3>Cloud platforms</h3><p>AWS Lambda, SQS, SNS, SES, Textract and more with Signature V4, Google Workspace, Microsoft Graph, Entra ID, SharePoint</p></div>
+  </div>
+  <p class="note">Anything else is one HTTP Request node away, with stored credentials and OAuth2.</p>
+</section>
+
+<section id="compare">
+  <h2>Compared with n8n.</h2>
+  <p class="intro">Flowwolf follows the n8n format so you can move in both directions. Where they differ:</p>
+  <table>
+    <tr><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Aspect</span></th><th scope="col">Flowwolf</th><th scope="col">n8n</th></tr>
+    <tr><td>Runtime</td><td>One Rust binary</td><td>Node.js with npm packages</td></tr>
+    <tr><td>Docker image</td><td>~105 MB</td><td>Several hundred MB</td></tr>
+    <tr><td>Database</td><td>SQLite or PostgreSQL</td><td>SQLite or PostgreSQL</td></tr>
+    <tr><td>Queue mode</td><td>Workers on PostgreSQL, no Redis</td><td>Workers on Redis and PostgreSQL</td></tr>
+    <tr><td>Workflow format and API</td><td>n8n JSON, /api/v1</td><td>n8n JSON, /api/v1</td></tr>
+    <tr><td>Integrations</td><td>408 node types</td><td>More than 400</td></tr>
+    <tr><td>License</td><td>MIT</td><td>Sustainable Use License</td></tr>
+  </table>
+</section>
+
+<section id="faq">
+  <h2>Questions people ask first.</h2>
+  <div class="faq">
+    <details><summary>Can I import my existing n8n workflows?</summary><p>Yes. Export a workflow in n8n and paste the JSON onto the canvas, or send it to the API. Nodes Flowwolf does not know yet stay in the workflow and report an error when they run.</p></details>
+    <details><summary>How do expressions work without Node.js?</summary><p>Flowwolf embeds QuickJS, a small JavaScript engine. Each run gets its own sandbox with <code>$json</code>, <code>$input</code>, <code>$('Node')</code>, <code>$now</code> and <code>$vars</code>. Endless loops stop at a time limit.</p></details>
+    <details><summary>Where is my data stored?</summary><p>In one SQLite file in the data volume, next to the key that encrypts credentials, or in PostgreSQL if you set <code>DB_TYPE=postgresdb</code>. Old executions are pruned automatically.</p></details>
+    <details><summary>Is it safe to put on the internet?</summary><p>Passwords are hashed with Argon2, sessions use HttpOnly cookies, credentials are encrypted, file access is limited to one folder, Python runs in an isolated process and the shell command node is off by default. Run it behind a TLS reverse proxy like any web app.</p></details>
+    <details><summary>What does it cost?</summary><p>Nothing. Flowwolf is open source under the MIT license, for yourself, your team or your customers.</p></details>
+  </div>
+</section>
+
+<div class="end">
+  <div class="box">
+    <h2>Start in a minute.</h2>
+    <p>Run the container, create the owner account and paste in your first workflow.</p>
+    <div class="start" style="margin-top:0">
+      <div class="cmd"><code id="cmd2">docker run -p 5678:5678 -v flowwolf:/data flowwolf</code><button type="button" data-copy="#cmd2">Copy</button></div>
+      <a class="btn" href="/app/">Open the editor</a>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#16181d"/><path d="M6 7l3 4h6l3-4v7l-6 4-6-4z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>Flowwolf</a>
+    <nav aria-label="Footer"><a href="/app/">Editor</a><a href="#compare">Compare</a><a href="/healthz">Status</a></nav>
+    <span class="right">© <span id="y">2026</span> Wolfscastle, MIT license</span>
+  </div>
+</footer>
+
+<script>
+document.getElementById('y').textContent = new Date().getFullYear();
+document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+  const text = document.querySelector(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; } catch { b.textContent = 'Select and copy'; }
+  setTimeout(() => (b.textContent = 'Copy'), 1600);
+}));
+</script>
+</body>
+</html>

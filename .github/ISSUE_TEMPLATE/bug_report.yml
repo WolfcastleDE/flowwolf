@@ -1,0 +1,62 @@
+name: Bug report
+description: Something does not work as it should
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! Please remove secrets (tokens, passwords, personal data) from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a workflow with …
+        2. Run …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow JSON (optional)
+      description: Export the smallest workflow that shows the problem (⋯ → Download).
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: Flowwolf version
+      description: Settings → About, or the image tag you run.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: How do you run Flowwolf?
+      options:
+        - Docker / Docker Compose
+        - Dokploy, Coolify or another PaaS
+        - Binary
+        - Built from source
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      options:
+        - SQLite (default)
+        - PostgreSQL
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Container logs around the error (`docker logs <container>`).
+      render: text

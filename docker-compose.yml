@@ -1,0 +1,38 @@
+# Production setup: pulls the released image. For a local build use
+#   docker build -t ghcr.io/wolfcastlede/flowwolf:latest .
+services:
+  flowwolf:
+    image: ghcr.io/wolfcastlede/flowwolf:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      GENERIC_TIMEZONE: Europe/Berlin
+      # Public URL used for webhook, form and invitation links (set this behind a reverse proxy).
+      FLOWWOLF_URL: ${FLOWWOLF_URL:-http://localhost:5678}
+      # Recommended: a fixed key (e.g. `openssl rand -hex 32`); otherwise one is generated in the volume.
+      FLOWWOLF_ENCRYPTION_KEY: ${FLOWWOLF_ENCRYPTION_KEY:-}
+      # Optional SMTP for invitations and password reset mails:
+      # N8N_SMTP_HOST: smtp.example.com
+      # N8N_SMTP_PORT: "465"
+      # N8N_SMTP_USER: flowwolf@example.com
+      # N8N_SMTP_PASS: secret
+      # N8N_SMTP_SENDER: "Flowwolf <flowwolf@example.com>"
+    volumes:
+      - flowwolf_data:/data
+
+  # Optional queue mode: set EXECUTIONS_MODE=queue on the main service and start workers:
+  # worker:
+  #   image: ghcr.io/wolfcastlede/flowwolf:latest
+  #   command: ["worker"]
+  #   restart: unless-stopped
+  #   environment:
+  #     EXECUTIONS_MODE: queue
+  #     FLOWWOLF_WORKER_CONCURRENCY: 10
+  #   volumes:
+  #     - flowwolf_data:/data
+  #   healthcheck:
+  #     disable: true
+
+volumes:
+  flowwolf_data:

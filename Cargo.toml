@@ -1,0 +1,83 @@
+[package]
+name = "flowwolf"
+version = "0.1.0"
+edition = "2024"
+description = "Fast, lightweight workflow automation compatible with n8n workflows"
+license = "MIT"
+repository = "https://github.com/WolfcastleDE/flowwolf"
+homepage = "https://github.com/WolfcastleDE/flowwolf"
+
+[features]
+default = ["git-ssh"]
+# Git source control over SSH (libgit2 + libssh2, statically linked). Without it only the HTTP APIs work.
+git-ssh = ["dep:git2", "dep:ssh-key", "dep:libz-sys"]
+# Python in the Code node (adds ~28 MB to the binary): cargo build --features python
+python = ["dep:rustpython", "dep:rustpython-vm", "dep:seccompiler", "dep:libc"]
+
+[dependencies]
+git2 = { version = "0.19", default-features = false, features = ["ssh", "vendored-libgit2", "vendored-openssl"], optional = true }
+ssh-key = { version = "0.6", default-features = false, features = ["ed25519", "getrandom", "std"], optional = true }
+# Link zlib statically: the distroless runtime image has no libz.so
+libz-sys = { version = "1", default-features = false, features = ["static"], optional = true }
+rustpython = { version = "0.4", default-features = false, features = ["stdlib", "freeze-stdlib", "threading"], optional = true }
+rustpython-vm = { version = "0.4", default-features = false, optional = true }
+aes-gcm = "0.10"
+anyhow = "1"
+argon2 = "0.5"
+axum = { version = "0.8", features = ["macros", "ws"] }
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
+cron = "0.12"
+csv = "1"
+pdf-extract = "0.7"
+ego-tree = "0.6.3"
+flate2 = "1"
+mail-parser = "0.9"
+pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
+quick-xml = "0.37"
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+futures = "0.3"
+hex = "0.4"
+hmac = "0.12"
+lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-rustls", "rustls-platform-verifier", "ring", "builder", "smtp-transport", "hostname"] }
+md-5 = "0.10"
+mongodb = { version = "3", default-features = false, features = ["rustls-tls", "dns-resolver", "compat-3-0-0"] }
+suppaftp = { version = "12", default-features = false, features = ["tokio", "tokio-rustls-ring"] }
+russh = { version = "0.65", default-features = false, features = ["ring", "rsa"] }
+russh-sftp = "3"
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+mysql_async = { version = "0.37", default-features = false, features = ["default-rustls-ring"] }
+regex = "1"
+rumqttc = { version = "0.24", default-features = false }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "multipart", "gzip", "stream"] }
+rquickjs = "0.9"
+rusqlite = { version = "0.31", features = ["bundled"] }
+rust-embed = "8"
+scraper = "0.20"
+serde = { version = "1", features = ["derive"] }
+# preserve_order: objects keep their key order, as in JavaScript (and n8n)
+serde_json = { version = "1", features = ["preserve_order"] }
+sha1 = "0.10"
+sha2 = "0.10"
+tokio = { version = "1", features = ["full"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+tokio-postgres-rustls = "0.13"
+webpki-roots = "0.26"
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1", "with-chrono-0_4"] }
+tower-http = { version = "0.6", features = ["fs", "cors", "compression-gzip", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+
+[profile.release]
+lto = "thin"
+strip = true
+opt-level = 3
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Python sandbox (seccomp filter + rlimits for the runner process)
+seccompiler = { version = "0.4", optional = true }
+libc = { version = "0.2", optional = true }
