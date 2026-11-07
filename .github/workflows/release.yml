@@ -11,7 +11,8 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/flowwolf
+  # Image names must be lowercase (the organisation is WolfcastleDE).
+  IMAGE: ghcr.io/wolfcastlede/flowwolf
 
 jobs:
   image:
@@ -134,7 +135,7 @@ jobs:
           ### Run it
 
           \`\`\`bash
-          docker run -d -p 5678:5678 -v flowwolf_data:/data ghcr.io/${{ github.repository_owner }}/flowwolf:${version}
+          docker run -d -p 5678:5678 -v flowwolf_data:/data ghcr.io/wolfcastlede/flowwolf:${version}
           \`\`\`
 
           Or download \`docker-compose.yml\` from this release and run \`docker compose up -d\`.
