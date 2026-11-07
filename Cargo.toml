@@ -19,7 +19,7 @@ git2 = { version = "0.19", default-features = false, features = ["ssh", "vendore
 ssh-key = { version = "0.6", default-features = false, features = ["ed25519", "getrandom", "std"], optional = true }
 # Link zlib statically: the distroless runtime image has no libz.so
 libz-sys = { version = "1", default-features = false, features = ["static"], optional = true }
-rustpython = { version = "0.4", default-features = false, features = ["stdlib", "freeze-stdlib", "threading"], optional = true }
+rustpython = { version = "0.6", default-features = false, features = ["stdlib", "freeze-stdlib", "threading"], optional = true }
 rustpython-vm = { version = "0.4", default-features = false, optional = true }
 aes-gcm = "0.10"
 anyhow = "1"
