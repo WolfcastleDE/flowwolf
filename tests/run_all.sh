@@ -32,6 +32,7 @@ curl -s -o /dev/null -H "Authorization: token $T" -H 'content-type: application/
 fresh flowwolf:latest; $PY -X utf8 e2e.py http://localhost:5679 | tail -1
 fresh flowwolf:latest; $PY -X utf8 e2e_users.py http://localhost:5679 | tail -1
 fresh flowwolf:latest; $PY -X utf8 e2e_catalogue.py http://localhost:5679 | tail -1
+fresh -e FLOWWOLF_API_BASE_OVERRIDES="$($PY e2e_operations.py --overrides)" flowwolf:latest; $PY -X utf8 e2e_operations.py http://localhost:5679 | tail -1
 fresh flowwolf:latest; $PY -X utf8 e2e_integrations.py http://localhost:5679 host.docker.internal | tail -1
 fresh flowwolf:latest; $PY -X utf8 e2e_ai_share.py http://localhost:5679 | tail -1
 fresh flowwolf:latest; $PY -X utf8 e2e_mysql_utils.py http://localhost:5679 host.docker.internal | tail -1

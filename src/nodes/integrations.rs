@@ -717,7 +717,11 @@ async fn discord(ctx: &Ctx<'_>) -> Result<Out> {
         return generated(ctx).await;
     }
     let c = ctx.creds("discordWebhookApi")?;
-    let url = format!("{}?wait=true", as_str(&c["webhookUri"]));
+    let hook = as_str(&c["webhookUri"]);
+    if reqwest::Url::parse(&hook).map(|u| !u.scheme().starts_with("http")).unwrap_or(true) {
+        return Err(anyhow!("The Discord webhook URL in the credential is not valid (expected https://discord.com/api/webhooks/…)"));
+    }
+    let url = format!("{}?wait=true", super::declarative::rebase(hook));
     let mut out = vec![];
     for i in 0..ctx.items().len() {
         let mut body = json!({"content": ctx.s("content", i, "")?});
