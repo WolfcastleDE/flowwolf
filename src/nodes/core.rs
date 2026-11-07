@@ -335,7 +335,9 @@ fn stop_and_error(ctx: &Ctx) -> Result<Out> {
         let o = if let Value::String(s) = &o { serde_json::from_str(s).unwrap_or(o.clone()) } else { o };
         return Err(anyhow!("{}", o.get("message").map(as_str).unwrap_or_else(|| o.to_string())));
     }
-    Err(anyhow!("{}", ctx.s("errorMessage", 0, "")?))
+    let msg = ctx.s("errorMessage", 0, "")?;
+    // An empty message would leave the execution list without any hint why the run stopped.
+    Err(anyhow!("{}", if msg.trim().is_empty() { "Workflow stopped by the Stop and Error node" } else { msg.as_str() }))
 }
 
 async fn execute_workflow(ctx: &Ctx<'_>) -> Result<Out> {
