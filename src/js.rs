@@ -31,6 +31,21 @@ fn now() -> i64 {
     crate::model::now_ms()
 }
 
+/// The zone expressions use when none is given: GENERIC_TIMEZONE / TZ, else UTC.
+fn default_zone() -> String {
+    ["GENERIC_TIMEZONE", "TZ"].iter().find_map(|k| std::env::var(k).ok()).filter(|z| z.parse::<chrono_tz::Tz>().is_ok()).unwrap_or_else(|| "UTC".into())
+}
+
+/// UTC offset in minutes of `zone` at the instant `ms` (unknown zones count as UTC).
+fn tz_offset_minutes(zone: &str, ms: f64) -> i32 {
+    use chrono::{Offset, TimeZone};
+    let tz: chrono_tz::Tz = zone.parse().unwrap_or(chrono_tz::UTC);
+    match chrono::Utc.timestamp_millis_opt(ms as i64).single() {
+        Some(t) => tz.offset_from_utc_datetime(&t.naive_utc()).fix().local_minus_utc() / 60,
+        None => 0,
+    }
+}
+
 impl Js {
     pub fn new(h: Hooks) -> Result<Js> {
         let rt = Runtime::new()?;
@@ -59,6 +74,10 @@ impl Js {
                     B64.decode(s.trim()).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default()
                 })?,
             )?;
+            // Time zones for DateTime / $now: offset of a zone at an instant, and the instance's zone
+            // (GENERIC_TIMEZONE, like Luxon's default zone in n8n).
+            g.set("__tzOffset", Function::new(ctx.clone(), |zone: String, ms: f64| tz_offset_minutes(&zone, ms))?)?;
+            g.set("__tzDefault", Function::new(ctx.clone(), default_zone)?)?;
             ctx.eval::<(), _>(PRELUDE)?;
             Ok(())
         })
@@ -219,6 +238,28 @@ mod tests {
             Part::Text(" b".into())
         ]);
         assert_eq!(parse_template("{{ '}}' }}"), vec![Part::Code("'}}'".into())]);
+    }
+
+    #[test]
+    fn date_time_zones() {
+        let j = js();
+        j.set_input(r#"[{"json":{}}]"#, r#"{"runIndex":0,"workflow":{},"execution":{}}"#).unwrap();
+        let e = |code: &str| j.eval(code, 0).unwrap();
+        let b = "DateTime.fromISO('2026-11-08T01:16:26.174Z').setZone('Europe/Berlin')";
+        assert_eq!(e(&format!("{b}.toISO()")), json!("2026-11-08T02:16:26.174+01:00"));
+        assert_eq!(e(&format!("[{b}.hour, {b}.day, {b}.zoneName, {b}.offset]")), json!([2, 8, "Europe/Berlin", 60]));
+        // summer time
+        assert_eq!(e("DateTime.fromISO('2026-07-01T00:00:00Z').setZone('Europe/Berlin').toISO()"), json!("2026-07-01T02:00:00.000+02:00"));
+        // start of the day in the zone, not in UTC
+        assert_eq!(e("DateTime.fromISO('2026-11-07T23:30:00Z').setZone('Europe/Berlin').startOf('day').toISO()"), json!("2026-11-08T00:00:00.000+01:00"));
+        // a calendar day across the DST switch keeps the wall time
+        assert_eq!(e("DateTime.fromISO('2026-03-28T12:00:00', {zone: 'Europe/Berlin'}).plus({days: 1}).toISO()"), json!("2026-03-29T12:00:00.000+02:00"));
+        assert_eq!(e("DateTime.fromISO('2026-03-28T12:00:00', {zone: 'Europe/Berlin'}).plus({hours: 24}).toISO()"), json!("2026-03-29T13:00:00.000+02:00"));
+        // wall time without offset is read in the zone; formatting and UTC
+        assert_eq!(e("DateTime.fromISO('2026-11-08 09:05', {zone: 'Europe/Berlin'}).toUTC().toISO()"), json!("2026-11-08T08:05:00.000Z"));
+        assert_eq!(e("DateTime.fromISO('2026-11-08T09:05:00Z').setZone('America/New_York').toFormat('dd.MM.yyyy HH:mm ZZ z')"), json!("08.11.2026 04:05 -05:00 America/New_York"));
+        assert_eq!(e("DateTime.utc(2026, 1, 2, 3).toISO()"), json!("2026-01-02T03:00:00.000Z"));
+        assert_eq!(e("DateTime.fromISO('nope').isValid"), json!(false));
     }
 
     #[test]

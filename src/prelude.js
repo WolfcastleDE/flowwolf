@@ -4,107 +4,176 @@ var __in = [], __idx = 0, __ec = Object.create(null), __nc = Object.create(null)
 var $json = {}, $binary = {}, $itemIndex = 0, $runIndex = 0, $prevNode = {}, $workflow = {}, $execution = {}, $parameter = {}, $nodeName = '';
 var __res, __err, __customData = {};
 
-// ---- minimal Luxon-compatible DateTime ----
+// ---- Luxon-compatible DateTime with time zones ----
+// The instant is kept in _d (a JS Date); _z is the IANA zone used for fields, formatting and calendar
+// math. The default zone is the instance's GENERIC_TIMEZONE, as Luxon's default zone in n8n.
+const __zoneDefault = () => (typeof __tzDefault === 'function' ? __tzDefault() : 'UTC');
+const __zoneName = (z) => (!z || z === 'local' || z === 'system' || z === 'default') ? __zoneDefault() : (String(z).toLowerCase() === 'utc' ? 'UTC' : String(z));
+const __offsetAt = (zone, ms) => (typeof __tzOffset === 'function' ? __tzOffset(zone, ms) : 0);
 class DateTime {
-  constructor(d) { this._d = d; }
+  constructor(d, zone) { this._d = d instanceof Date ? new Date(d.getTime()) : new Date(d); this._z = __zoneName(zone); }
+  // Wall-clock milliseconds (zone fields read as UTC) -> instant in that zone, DST-safe.
+  static _fromWall(wall, zone) {
+    const z = __zoneName(zone);
+    let ms = wall - __offsetAt(z, wall) * 6e4;
+    ms = wall - __offsetAt(z, ms) * 6e4;
+    return new DateTime(new Date(ms), z);
+  }
   static now() { return new DateTime(new Date()); }
-  static local() { return DateTime.now(); }
-  static utc() { return DateTime.now(); }
-  static fromISO(s) { return new DateTime(new Date(s)); }
-  static fromSQL(s) { return new DateTime(new Date(String(s).replace(' ', 'T'))); }
-  static fromMillis(n) { return new DateTime(new Date(n)); }
-  static fromSeconds(n) { return new DateTime(new Date(n * 1000)); }
-  static fromJSDate(d) { return new DateTime(new Date(d)); }
-  static fromFormat(s) { return new DateTime(new Date(s)); }
+  static local(...a) { return a.length ? DateTime._fromParts(a) : DateTime.now(); }
+  static utc(...a) { return a.length ? DateTime._fromParts(a, 'UTC') : new DateTime(new Date(), 'UTC'); }
+  static _fromParts(a, zone) { return DateTime._fromWall(Date.UTC(a[0], (a[1] || 1) - 1, a[2] || 1, a[3] || 0, a[4] || 0, a[5] || 0, a[6] || 0), zone); }
+  static fromObject(o, opts) {
+    const n = Object.assign({ year: new Date().getUTCFullYear(), month: 1, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }, o || {});
+    return DateTime._fromWall(Date.UTC(n.year, n.month - 1, n.day, n.hour, n.minute, n.second, n.millisecond), opts && opts.zone);
+  }
+  static fromISO(s, opts) {
+    s = String(s).trim();
+    const zone = opts && opts.zone;
+    // With an offset or Z the instant is fixed; without one the wall time is read in the zone.
+    if (/(?:[zZ]|[+-]\d\d(?::?\d\d)?)$/.test(s) && /T/.test(s)) return new DateTime(new Date(s), zone);
+    const m = s.match(/^(\d{4})-(\d\d)(?:-(\d\d))?(?:[T ](\d\d)(?::(\d\d)(?::(\d\d)(?:[.,](\d+))?)?)?)?$/);
+    if (!m) return new DateTime(new Date(NaN), zone);
+    const msPart = Number(((m[7] || '0') + '00').slice(0, 3));
+    return DateTime._fromWall(Date.UTC(+m[1], +m[2] - 1, +(m[3] || 1), +(m[4] || 0), +(m[5] || 0), +(m[6] || 0), msPart), zone);
+  }
+  static fromSQL(s, opts) { return DateTime.fromISO(String(s).trim().replace(' ', 'T'), opts); }
+  static fromMillis(n, opts) { return new DateTime(new Date(Number(n)), opts && opts.zone); }
+  static fromSeconds(n, opts) { return new DateTime(new Date(Number(n) * 1000), opts && opts.zone); }
+  static fromJSDate(d, opts) { return new DateTime(new Date(d), opts && opts.zone); }
+  static fromFormat(s, f, opts) { const d = DateTime.fromISO(s, opts); return d.isValid ? d : new DateTime(new Date(s), opts && opts.zone); }
+  static fromHTTP(s, opts) { return new DateTime(new Date(s), opts && opts.zone); }
+  static fromRFC2822(s, opts) { return new DateTime(new Date(s), opts && opts.zone); }
+  static isDateTime(o) { return o instanceof DateTime; }
   get isValid() { return !isNaN(this._d.getTime()); }
-  get year() { return this._d.getFullYear(); }
-  get month() { return this._d.getMonth() + 1; }
-  get day() { return this._d.getDate(); }
-  get hour() { return this._d.getHours(); }
-  get minute() { return this._d.getMinutes(); }
-  get second() { return this._d.getSeconds(); }
-  get millisecond() { return this._d.getMilliseconds(); }
-  get weekday() { return ((this._d.getDay() + 6) % 7) + 1; }
-  get weekdayLong() { return DateTime._days[this._d.getDay()]; }
-  get monthLong() { return DateTime._months[this._d.getMonth()]; }
+  get zoneName() { return this._z; }
+  get zone() { return { name: this._z, type: 'iana', isValid: true }; }
+  get offset() { return __offsetAt(this._z, this._d.getTime()); }
+  get isOffsetFixed() { return this._z === 'UTC'; }
+  get _w() { return new Date(this._d.getTime() + this.offset * 6e4); }
+  get year() { return this._w.getUTCFullYear(); }
+  get month() { return this._w.getUTCMonth() + 1; }
+  get day() { return this._w.getUTCDate(); }
+  get hour() { return this._w.getUTCHours(); }
+  get minute() { return this._w.getUTCMinutes(); }
+  get second() { return this._w.getUTCSeconds(); }
+  get millisecond() { return this._w.getUTCMilliseconds(); }
+  get weekday() { return ((this._w.getUTCDay() + 6) % 7) + 1; }
+  get weekdayLong() { return DateTime._days[this._w.getUTCDay()]; }
+  get weekdayShort() { return DateTime._days[this._w.getUTCDay()].slice(0, 3); }
+  get monthLong() { return DateTime._months[this._w.getUTCMonth()]; }
+  get monthShort() { return DateTime._months[this._w.getUTCMonth()].slice(0, 3); }
+  get quarter() { return Math.floor(this._w.getUTCMonth() / 3) + 1; }
+  get daysInMonth() { const w = this._w; return new Date(Date.UTC(w.getUTCFullYear(), w.getUTCMonth() + 1, 0)).getUTCDate(); }
+  get ordinal() { const w = this._w; return Math.round((Date.UTC(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate()) - Date.UTC(w.getUTCFullYear(), 0, 1)) / 864e5) + 1; }
+  get weekNumber() { const w = this._w; const t = new Date(Date.UTC(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate())); t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7); }
   get ts() { return this._d.getTime(); }
-  toISO() { return this._d.toISOString(); }
-  toISODate() { return this.toFormat('yyyy-MM-dd'); }
-  toSQL() { return this.toFormat('yyyy-MM-dd HH:mm:ss'); }
+  _offsetStr(colon = true) { const o = this.offset, p = (n) => String(n).padStart(2, '0');
+    return (o >= 0 ? '+' : '-') + p(Math.floor(Math.abs(o) / 60)) + (colon ? ':' : '') + p(Math.abs(o) % 60); }
+  toISO() { if (!this.isValid) return null; return this.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS") + (this._z === 'UTC' ? 'Z' : this._offsetStr()); }
+  toISODate() { return this.isValid ? this.toFormat('yyyy-MM-dd') : null; }
+  toISOTime() { return this.isValid ? this.toFormat('HH:mm:ss.SSS') + (this._z === 'UTC' ? 'Z' : this._offsetStr()) : null; }
+  toSQL() { return this.toFormat('yyyy-MM-dd HH:mm:ss.SSS ') + this._offsetStr(); }
+  toSQLDate() { return this.toFormat('yyyy-MM-dd'); }
   toMillis() { return this._d.getTime(); }
-  toSeconds() { return Math.floor(this._d.getTime() / 1000); }
-  toUnixInteger() { return this.toSeconds(); }
+  toSeconds() { return this._d.getTime() / 1000; }
+  toUnixInteger() { return Math.floor(this._d.getTime() / 1000); }
   toJSDate() { return new Date(this._d); }
   toJSON() { return this.toISO(); }
   toString() { return this.toISO(); }
-  toLocaleString(l, o) { return this._d.toLocaleString(l, o); }
+  toObject() { return { year: this.year, month: this.month, day: this.day, hour: this.hour, minute: this.minute, second: this.second, millisecond: this.millisecond }; }
+  toLocaleString(l, o) { try { return this._d.toLocaleString(l, Object.assign({ timeZone: this._z }, o || {})); } catch (e) { return this.toFormat('dd.MM.yyyy, HH:mm:ss'); } }
   valueOf() { return this._d.getTime(); }
-  setZone() { return this; }
+  setZone(z, opts) {
+    const zone = __zoneName(z);
+    // keepLocalTime: same wall clock, different instant
+    if (opts && opts.keepLocalTime) return DateTime._fromWall(this._w.getTime(), zone);
+    return new DateTime(this._d, zone);
+  }
   setLocale() { return this; }
-  toUTC() { return this; }
-  toLocal() { return this; }
-  set(o) { const d = new Date(this._d); const m = { year: 'FullYear', month: 'Month', day: 'Date', hour: 'Hours', minute: 'Minutes', second: 'Seconds', millisecond: 'Milliseconds' };
-    for (const [k, v] of Object.entries(o)) { if (m[k]) d['set' + m[k]](k === 'month' ? v - 1 : v); } return new DateTime(d); }
+  reconfigure() { return this; }
+  toUTC() { return this.setZone('UTC'); }
+  toLocal() { return this.setZone(__zoneDefault()); }
+  set(o) {
+    const w = this._w;
+    const m = { year: 'FullYear', month: 'Month', day: 'Date', hour: 'Hours', minute: 'Minutes', second: 'Seconds', millisecond: 'Milliseconds' };
+    for (const [k, v] of Object.entries(o || {})) { if (m[k]) w['setUTC' + m[k]](k === 'month' ? v - 1 : v); }
+    return DateTime._fromWall(w.getTime(), this._z);
+  }
   plus(o) { return this._add(o, 1); }
   minus(o) { return this._add(o, -1); }
   _add(o, s) {
     if (typeof o === 'number') o = { milliseconds: o };
-    const d = new Date(this._d);
-    for (const [k, v] of Object.entries(o)) {
-      const n = v * s;
+    if (o && typeof o.toObject === 'function' && !(o instanceof DateTime)) o = o.toObject();
+    // Calendar units move the wall clock in the zone (DST-safe); time units move the instant.
+    const w = this._w; let cal = false, time = 0;
+    for (const [k, v] of Object.entries(o || {})) {
+      const n = Number(v) * s;
       switch (k.replace(/s$/, '')) {
-        case 'year': d.setFullYear(d.getFullYear() + n); break;
-        case 'quarter': d.setMonth(d.getMonth() + 3 * n); break;
-        case 'month': d.setMonth(d.getMonth() + n); break;
-        case 'week': d.setDate(d.getDate() + 7 * n); break;
-        case 'day': d.setDate(d.getDate() + n); break;
-        case 'hour': d.setHours(d.getHours() + n); break;
-        case 'minute': d.setMinutes(d.getMinutes() + n); break;
-        case 'second': d.setSeconds(d.getSeconds() + n); break;
-        case 'millisecond': d.setMilliseconds(d.getMilliseconds() + n); break;
+        case 'year': w.setUTCFullYear(w.getUTCFullYear() + n); cal = true; break;
+        case 'quarter': w.setUTCMonth(w.getUTCMonth() + 3 * n); cal = true; break;
+        case 'month': w.setUTCMonth(w.getUTCMonth() + n); cal = true; break;
+        case 'week': w.setUTCDate(w.getUTCDate() + 7 * n); cal = true; break;
+        case 'day': w.setUTCDate(w.getUTCDate() + n); cal = true; break;
+        case 'hour': time += n * 36e5; break;
+        case 'minute': time += n * 6e4; break;
+        case 'second': time += n * 1e3; break;
+        case 'millisecond': time += n; break;
       }
     }
-    return new DateTime(d);
+    const base = cal ? DateTime._fromWall(w.getTime(), this._z) : this;
+    return new DateTime(new Date(base._d.getTime() + time), this._z);
   }
   startOf(u) {
-    const d = new Date(this._d);
-    if (u === 'year') d.setMonth(0, 1);
-    if (u === 'month') d.setDate(1);
-    if (u === 'week') d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    if (['year', 'month', 'week', 'day'].includes(u)) d.setHours(0, 0, 0, 0);
-    if (u === 'hour') d.setMinutes(0, 0, 0);
-    if (u === 'minute') d.setSeconds(0, 0);
-    if (u === 'second') d.setMilliseconds(0);
-    return new DateTime(d);
+    u = String(u).replace(/s$/, '');
+    const w = this._w;
+    if (u === 'year') w.setUTCMonth(0, 1);
+    if (u === 'quarter') w.setUTCMonth(Math.floor(w.getUTCMonth() / 3) * 3, 1);
+    if (u === 'month') w.setUTCDate(1);
+    if (u === 'week') w.setUTCDate(w.getUTCDate() - ((w.getUTCDay() + 6) % 7));
+    if (['year', 'quarter', 'month', 'week', 'day'].includes(u)) w.setUTCHours(0, 0, 0, 0);
+    if (u === 'hour') w.setUTCMinutes(0, 0, 0);
+    if (u === 'minute') w.setUTCSeconds(0, 0);
+    if (u === 'second') w.setUTCMilliseconds(0);
+    return DateTime._fromWall(w.getTime(), this._z);
   }
-  endOf(u) { return this.startOf(u).plus({ [u]: 1 }).minus({ milliseconds: 1 }); }
+  endOf(u) { return this.startOf(u).plus({ [String(u).replace(/s$/, '')]: 1 }).minus({ milliseconds: 1 }); }
   diff(other, unit) {
-    const ms = this.toMillis() - new DateTime(new Date(other.valueOf())).toMillis();
-    const f = { milliseconds: 1, seconds: 1e3, minutes: 6e4, hours: 36e5, days: 864e5, weeks: 6048e5, months: 2592e6, years: 31536e6 };
+    const ms = this.toMillis() - Number(other.valueOf());
+    const f = { milliseconds: 1, seconds: 1e3, minutes: 6e4, hours: 36e5, days: 864e5, weeks: 6048e5, months: 2592e6, quarters: 7776e6, years: 31536e6 };
     const dur = { as: (u) => ms / f[u.replace(/s?$/, 's')], toMillis: () => ms };
     for (const u of [].concat(unit || 'milliseconds')) dur[u] = ms / f[u.replace(/s?$/, 's')];
     return dur;
   }
+  diffNow(unit) { return this.diff(DateTime.now(), unit); }
   diffToNow(unit) { return DateTime.now().diff(this, unit); }
-  equals(o) { return this.toMillis() === o.valueOf(); }
-  hasSame(o, u) { return this.startOf(u).toMillis() === new DateTime(new Date(o.valueOf())).startOf(u).toMillis(); }
-  isBetween(a, b) { const t = this.toMillis(); return t >= a.valueOf() && t <= b.valueOf(); }
+  equals(o) { return o instanceof DateTime && this.toMillis() === o.toMillis() && this._z === o._z; }
+  hasSame(o, u) { return this.startOf(u).toMillis() === new DateTime(new Date(Number(o.valueOf())), this._z).startOf(u).toMillis(); }
+  isBetween(a, b) { const t = this.toMillis(); return t >= Number(a.valueOf()) && t <= Number(b.valueOf()); }
   toFormat(f) {
-    const d = this._d, p = (n, l = 2) => String(n).padStart(l, '0');
-    return f.replace(/'([^']*)'|yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|SSS|a|EEEE|EEE|ZZ|Z/g, (t, lit) => {
+    if (!this.isValid) return 'Invalid DateTime';
+    const d = this._w, p = (n, l = 2) => String(n).padStart(l, '0');
+    return String(f).replace(/'([^']*)'|yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|SSS|a|EEEE|EEE|ZZZ|ZZ|Z|z|kkkk|WW|W|ooo|o|q/g, (t, lit) => {
       if (lit !== undefined) return lit;
       switch (t) {
-        case 'yyyy': return d.getFullYear(); case 'yy': return p(d.getFullYear() % 100);
-        case 'MMMM': return DateTime._months[d.getMonth()]; case 'MMM': return DateTime._months[d.getMonth()].slice(0, 3);
-        case 'MM': return p(d.getMonth() + 1); case 'M': return d.getMonth() + 1;
-        case 'dd': return p(d.getDate()); case 'd': return d.getDate();
-        case 'HH': return p(d.getHours()); case 'H': return d.getHours();
-        case 'hh': return p(d.getHours() % 12 || 12); case 'h': return d.getHours() % 12 || 12;
-        case 'mm': return p(d.getMinutes()); case 'm': return d.getMinutes();
-        case 'ss': return p(d.getSeconds()); case 's': return d.getSeconds();
-        case 'SSS': return p(d.getMilliseconds(), 3); case 'a': return d.getHours() < 12 ? 'AM' : 'PM';
-        case 'EEEE': return DateTime._days[d.getDay()]; case 'EEE': return DateTime._days[d.getDay()].slice(0, 3);
-        default: { const o = -d.getTimezoneOffset(); return (o >= 0 ? '+' : '-') + p(Math.floor(Math.abs(o) / 60)) + (t === 'ZZ' ? ':' : '') + p(Math.abs(o) % 60); }
+        case 'yyyy': case 'kkkk': return d.getUTCFullYear(); case 'yy': return p(d.getUTCFullYear() % 100);
+        case 'MMMM': return DateTime._months[d.getUTCMonth()]; case 'MMM': return DateTime._months[d.getUTCMonth()].slice(0, 3);
+        case 'MM': return p(d.getUTCMonth() + 1); case 'M': return d.getUTCMonth() + 1;
+        case 'dd': return p(d.getUTCDate()); case 'd': return d.getUTCDate();
+        case 'HH': return p(d.getUTCHours()); case 'H': return d.getUTCHours();
+        case 'hh': return p(d.getUTCHours() % 12 || 12); case 'h': return d.getUTCHours() % 12 || 12;
+        case 'mm': return p(d.getUTCMinutes()); case 'm': return d.getUTCMinutes();
+        case 'ss': return p(d.getUTCSeconds()); case 's': return d.getUTCSeconds();
+        case 'SSS': return p(d.getUTCMilliseconds(), 3); case 'a': return d.getUTCHours() < 12 ? 'AM' : 'PM';
+        case 'EEEE': return DateTime._days[d.getUTCDay()]; case 'EEE': return DateTime._days[d.getUTCDay()].slice(0, 3);
+        case 'WW': return p(this.weekNumber); case 'W': return this.weekNumber;
+        case 'ooo': return p(this.ordinal, 3); case 'o': return this.ordinal;
+        case 'q': return this.quarter;
+        case 'z': return this._z;
+        case 'ZZZ': return this._offsetStr(false);
+        case 'ZZ': return this._offsetStr(true);
+        default: { const o = this.offset; return (o >= 0 ? '+' : '-') + Math.floor(Math.abs(o) / 60) + (o % 60 ? ':' + p(Math.abs(o) % 60) : ''); }
       }
     });
   }
