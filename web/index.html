@@ -207,7 +207,7 @@ footer .right { margin-left: auto; }
 <section class="hero">
   <div class="wrap">
     <h1>Your n8n workflows on one small binary.</h1>
-    <p class="lede">Flowwolf runs the workflows you built in n8n with the same JSON, the same expressions and the same API, in a 105&nbsp;MB image that idles at about 5&nbsp;MB of memory. Open source, written in Rust.</p>
+    <p class="lede">Flowwolf runs the workflows you built in n8n with the same JSON, the same expressions and the same API, in a 105&nbsp;MB image that idles at about 5&nbsp;MB of memory and handles the same workflow about three times as fast. Open source, written in Rust.</p>
     <div class="start">
       <div class="cmd"><code id="cmd">docker run -p 5678:5678 -v flowwolf:/data flowwolf</code><button type="button" data-copy="#cmd">Copy</button></div>
       <a class="btn quiet" href="/app/">Open the editor</a>
@@ -361,13 +361,18 @@ docker run … flowwolf worker</pre>
   <table>
     <tr><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Aspect</span></th><th scope="col">Flowwolf</th><th scope="col">n8n</th></tr>
     <tr><td>Runtime</td><td>One Rust binary</td><td>Node.js with npm packages</td></tr>
-    <tr><td>Docker image</td><td>~105 MB</td><td>Several hundred MB</td></tr>
+    <tr><td>Startup until ready</td><td>0.8 s</td><td>5.8 s</td></tr>
+    <tr><td>Memory at idle</td><td>4.3 MB</td><td>653 MB</td></tr>
+    <tr><td>Docker image</td><td>104 MB</td><td>1.94 GB</td></tr>
+    <tr><td>Throughput, same workflow</td><td>49–56 requests/s</td><td>15 requests/s</td></tr>
+    <tr><td>Median response under load</td><td>1.0 s</td><td>3.2 s</td></tr>
     <tr><td>Database</td><td>SQLite or PostgreSQL</td><td>SQLite or PostgreSQL</td></tr>
     <tr><td>Queue mode</td><td>Workers on PostgreSQL, no Redis</td><td>Workers on Redis and PostgreSQL</td></tr>
     <tr><td>Workflow format and API</td><td>n8n JSON, /api/v1</td><td>n8n JSON, /api/v1</td></tr>
     <tr><td>Integrations</td><td>408 node types</td><td>More than 400</td></tr>
     <tr><td>License</td><td>MIT</td><td>Sustainable Use License</td></tr>
   </table>
+  <p class="intro" style="margin-top:14px;font-size:14px">Measured side by side on the same machine: Flowwolf 0.1.0 and n8n 2.46.6, each with 2 CPU cores and 2 GB RAM, the same Webhook → Code → Set workflow and 50 concurrent requests. Workflows that mostly wait for slow external APIs show less difference. <a href="https://github.com/WolfcastleDE/flowwolf/blob/main/tools/benchmark.py">Run the benchmark yourself</a>.</p>
 </section>
 
 <section id="faq">

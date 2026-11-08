@@ -28,6 +28,28 @@ Or with Compose: download [`docker-compose.yml`](docker-compose.yml) and run `do
 - Production webhooks: `/webhook/<path>`, test webhooks: `/webhook-test/<path>`, forms: `/form/<path>`
 - Public API: `/api/v1/...` with header `X-N8N-API-KEY` (create keys under Settings)
 
+## Benchmark
+
+Flowwolf and n8n side by side in Docker, each limited to 2 CPU cores and 2 GB RAM, running the same workflow
+(Webhook → Code → Set) under the same load (50 concurrent requests for 20 s after a warm-up).
+
+| | Flowwolf 0.1.0 | n8n 2.46.6 | |
+|---|---|---|---|
+| Startup until ready | 0.8 s | 5.8 s | ~7× faster |
+| Memory at idle | 4.3 MB | 653 MB | ~150× less |
+| Docker image | 104 MB | 1.94 GB | ~19× smaller |
+| Throughput, simple workflow | 49–56 req/s | 15 req/s | ~3.5× |
+| Throughput, 1,000 items per run | 44 req/s | 13 req/s | ~3.4× |
+| Median response time under load | 1.0 s | 3.2 s | ~3× faster |
+| Memory under load | 49–189 MB | 719–799 MB | ~4–15× less |
+| Single request without load | ~18 ms | | |
+
+Measured on 8 November 2026 with Docker Desktop on Windows, which adds network overhead on both sides; on a
+Linux server both are faster. Workflows that mostly wait for slow external APIs show less difference. n8n ran in
+its default mode without queue workers. Flowwolf currently runs executions of one instance one after another,
+so its throughput does not grow with more cores yet; parallel execution is the next performance step.
+Reproduce it with [`tools/benchmark.py`](tools/benchmark.py).
+
 ## Deploy
 
 Flowwolf is one container with one volume, so any Docker host or PaaS works:
