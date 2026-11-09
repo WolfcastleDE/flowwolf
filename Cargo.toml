@@ -3,7 +3,7 @@ name = "flowwolf"
 version = "0.1.0"
 edition = "2024"
 description = "Fast, lightweight workflow automation compatible with n8n workflows"
-license = "MIT"
+license-file = "LICENSE"
 repository = "https://github.com/WolfcastleDE/flowwolf"
 homepage = "https://github.com/WolfcastleDE/flowwolf"
 

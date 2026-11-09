@@ -2,6 +2,16 @@
 
 All notable changes are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+
+- License: from the next release on, Flowwolf is fair-code under the Sustainable Use License (as n8n). Using,
+  modifying and self-hosting stay free; selling Flowwolf or offering it as a paid service is not allowed without
+  a separate agreement. v0.1.0 and earlier remain available under MIT.
+- Expressions and the Code node: `DateTime`, `$now` and `$today` use the instance time zone (`GENERIC_TIMEZONE`)
+  like Luxon in n8n, with correct daylight saving time.
+
 ## [0.1.0] - 2026-11-08
 
 The first public release.

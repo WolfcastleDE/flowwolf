@@ -46,7 +46,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.licenses=LicenseRef-Sustainable-Use-1.0
             org.opencontainers.image.description=Workflow automation compatible with n8n, written in Rust
       - name: Remember digest
         run: |

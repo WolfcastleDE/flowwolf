@@ -47,4 +47,5 @@ other hand-written nodes.
 - One topic per pull request, with a short description of what and why.
 - `cargo test` and the end-to-end suite you touched must pass.
 - Code comments are in English. UI changes are checked in light and dark mode and at phone width.
-- By contributing you agree that your work is published under the [MIT license](LICENSE).
+- By contributing you agree that your work is published under the project's [Sustainable Use License](LICENSE) and that
+  Wolfscastle.de may also license it under other terms in the future.

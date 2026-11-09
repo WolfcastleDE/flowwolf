@@ -3,9 +3,9 @@
 [![CI](https://github.com/WolfcastleDE/flowwolf/actions/workflows/ci.yml/badge.svg)](https://github.com/WolfcastleDE/flowwolf/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/WolfcastleDE/flowwolf)](https://github.com/WolfcastleDE/flowwolf/releases)
 [![Image](https://img.shields.io/badge/image-ghcr.io%2Fwolfcastlede%2Fflowwolf-2f5bea)](https://github.com/WolfcastleDE/flowwolf/pkgs/container/flowwolf)
-[![License: MIT](https://img.shields.io/badge/license-MIT-16181d)](LICENSE)
+[![License: Sustainable Use](https://img.shields.io/badge/license-Sustainable%20Use%20(fair--code)-16181d)](LICENSE)
 
-Workflow automation, without the weight. Flowwolf is an open source automation server written in Rust.
+Workflow automation, without the weight. Flowwolf is a fair-code (source available) automation server written in Rust.
 It reads and writes the n8n workflow format, runs n8n expressions and Code nodes in an embedded
 JavaScript sandbox (QuickJS) and ships as one binary with the editor and website built in.
 
@@ -188,6 +188,14 @@ query/body mapping, auth (bearer, basic, header, query, OAuth2), pagination limi
 
 n8n ships 400+ integrations; Flowwolf has 408 node types (Slack, Telegram, Discord, GitHub, Gmail, Google Drive, AWS S3, MongoDB and FTP/SFTP carry n8n's operation sets — S3, MongoDB, FTP and SFTP are tested against real servers; many others still have fewer operations per service than n8n) — everything else goes through the HTTP Request node
 with stored credentials (including OAuth2).
+
+## License
+
+Flowwolf is **fair-code** under the [Sustainable Use License](LICENSE), the same license n8n uses. You may use and
+modify it for your own internal business purposes or for personal and non-commercial use, self-host it and report
+issues or contribute. You may not sell Flowwolf itself or offer it to others as a paid service; for that, ask in the
+[discussions](https://github.com/WolfcastleDE/flowwolf/discussions). Releases up to and including v0.1.0 were
+published under the MIT license and remain available under it.
 
 ## Development
 
