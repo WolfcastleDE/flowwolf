@@ -63,6 +63,20 @@ Flowwolf is one container with one volume, so any Docker host or PaaS works:
 Keep the `/data` volume and `FLOWWOLF_ENCRYPTION_KEY` in your backups. Releases are tagged `vX.Y.Z`;
 images are published as `:X.Y.Z`, `:X.Y` and `:latest`.
 
+## Updating
+
+Flowwolf checks the GitHub releases once a day. When a newer version exists, the editor shows **Update x.y.z** in the
+sidebar, and **Settings → Updates** lists what changed.
+
+- **One click:** set `FLOWWOLF_UPDATE_WEBHOOK` to the deploy hook of your platform (in Dokploy: the app's
+  *Deployments → Webhook URL*; in Coolify: the deploy webhook). Owners and admins then get an **Install** button;
+  Flowwolf calls the hook, the platform pulls or builds the new version and restarts the container, and the editor
+  reloads when the new version answers. Your data in `/data` stays.
+- **Docker Compose:** `docker compose pull && docker compose up -d`
+- **Binary:** download the new release, replace the `flowwolf` file and restart it.
+
+Turn the check off with `FLOWWOLF_VERSION_NOTIFICATIONS_ENABLED=false` (n8n's `N8N_VERSION_NOTIFICATIONS_ENABLED` works too).
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -82,6 +96,9 @@ images are published as `:X.Y.Z`, `:X.Y` and `:latest`.
 | `DB_TYPE` | `sqlite` | `postgresdb` stores everything in PostgreSQL (n8n variables): `DB_POSTGRESDB_HOST`, `_PORT` (5432), `_DATABASE`, `_USER`, `_PASSWORD`, `_SCHEMA` (`public`), `_SSL_ENABLED`, `_SSL_REJECT_UNAUTHORIZED` |
 | `FLOWWOLF_WORKER_CONCURRENCY` | `10` | Parallel executions per worker |
 | `FLOWWOLF_EXECUTIONS_MAX_AGE_HOURS` / `_MAX_COUNT` | `336` / `10000` | Execution pruning |
+| `FLOWWOLF_UPDATE_WEBHOOK` | – | Deploy hook the **Install update** button calls (Dokploy, Coolify, …) |
+| `FLOWWOLF_VERSION_NOTIFICATIONS_ENABLED` (`N8N_…`) | `true` | Daily check for new releases |
+| `FLOWWOLF_UPDATE_URL` | GitHub releases API | Where the release list comes from (mirror, tests) |
 
 ## What is implemented
 

@@ -17,6 +17,7 @@ mod oauth;
 mod python;
 mod security;
 mod triggers;
+mod updates;
 mod users;
 
 use anyhow::Result;
@@ -102,6 +103,7 @@ async fn serve(worker: bool) -> Result<()> {
     }
 
     tokio::spawn(engine::resume_due(app.clone()));
+    tokio::spawn(updates::run(app.clone()));
     let a = app.clone();
     tokio::spawn(async move {
         loop {

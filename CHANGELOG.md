@@ -4,6 +4,12 @@ All notable changes are listed here. Versions follow [semantic versioning](https
 
 ## [Unreleased]
 
+### Added
+
+- Update notices: Flowwolf checks the GitHub releases once a day; the sidebar shows **Update x.y.z** and
+  Settings → Updates lists the release notes. With `FLOWWOLF_UPDATE_WEBHOOK` set, owners and admins update with
+  one click through the platform's deploy hook (Dokploy, Coolify, …).
+
 ### Changed
 
 - License: from the next release on, Flowwolf is fair-code under the Sustainable Use License (as n8n). Using,

@@ -211,6 +211,36 @@ async function boot() {
   try { App.user = await api('GET', '/login'); } catch { App.user = null; }
   if (App.user) await loadTypes();
   route();
+  loadUpdates();
+}
+/** Update notice: asked once per page load; the server checks GitHub once a day. */
+async function loadUpdates() {
+  if (!App.user) return;
+  App.updates = await api('GET', '/updates').catch(() => null);
+  const slot = $('[data-update-slot]');
+  if (slot) slot.replaceChildren(...updateNav());
+}
+function updateNav() {
+  const u = App.updates;
+  if (!u || !u.updateAvailable) return [];
+  return [h(`<a class="nav update" href="#/settings" title="Flowwolf ${esc(u.latest)} is available">${icon('download')}<span>Update ${esc(u.latest)}</span></a>`)];
+}
+/** Release notes (GitHub markdown) as safe HTML: headings, lists, bold, inline code and links only. */
+function notesHtml(md) {
+  const inline = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  let html = '', list = false, code = false;
+  for (const line of String(md || '').split(/\r?\n/)) {
+    if (line.startsWith('```')) { code = !code; continue; }
+    if (code) continue;
+    const li = line.match(/^\s*[-*]\s+(.*)/), hd = line.match(/^#{1,6}\s+(.*)/);
+    if (li) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(li[1])}</li>`; continue; }
+    if (list && line.trim() && /^\s{2,}/.test(line)) { html = html.replace(/<\/li>$/, ' ' + inline(line.trim()) + '</li>'); continue; }
+    if (list) { html += '</ul>'; list = false; }
+    if (hd) html += `<p class="nh">${inline(hd[1])}</p>`;
+    else if (line.trim()) html += `<p>${inline(line)}</p>`;
+  }
+  return html + (list ? '</ul>' : '');
 }
 async function loadTypes() {
   [App.nodeTypes, App.credTypes] = await Promise.all([api('GET', '/node-types'), api('GET', '/credential-types')]);
@@ -255,12 +285,14 @@ function shell(active, content, opts = {}) {
       <a class="logo" href="#/workflows"><span class="logo-mark">${icon('wolf')}</span><span>Flowwolf</span></a>
       ${nav.map(([k, ic, l]) => `<a class="nav ${active === k ? 'on' : ''}" href="#/${k}" title="${l}">${icon(ic)}<span>${l}</span></a>`).join('')}
       <div class="grow"></div>
+      <div data-update-slot></div>
       <button class="nav" data-theme title="Toggle theme">${icon('sun')}<span>Theme</span></button>
       <div class="me"><div class="avatar">${esc(ini)}</div><span class="grow" style="min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px">${esc(App.user.firstName || App.user.email)}</span>
         <button class="btn ghost sm icon" data-logout title="Sign out">${icon('logout')}</button></div>
     </aside>
     <main class="main"></main></div>`);
   $('.main', root).append(content);
+  $('[data-update-slot]', root).replaceChildren(...updateNav());
   $('[data-logout]', root).onclick = async () => { await api('POST', '/logout'); App.user = null; location.hash = '#/login'; };
   $('[data-theme]', root).onclick = () => {
     const dark = getComputedStyle(document.documentElement).colorScheme === 'dark';
@@ -716,10 +748,41 @@ async function pageSettings() {
         <div class="keybox"><span class="mono" style="flex:1;word-break:break-all" data-pub>No key yet</span><button class="btn sm" type="button" data-copy>Copy</button><button class="btn sm" type="button" data-gen>Generate key</button></div>
         <div class="sub muted" style="margin-top:6px;font-size:12.5px" data-host></div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-scsave>Save</button><button class="btn" data-scpush>${icon('upload')}Push</button><button class="btn" data-scpull>${icon('download')}Pull</button></div></div>` : ''}
+    <div class="section-title">Updates</div>
+    <div class="card" style="padding:20px" data-updates><span class="muted">Checking…</span></div>
     <div class="section-title">About</div>
     <div class="card" style="padding:20px;font-size:13.5px;line-height:1.9">Version <b>${esc(App.settings.version)}</b><br>Production webhooks: <span class="mono">${esc(App.settings.webhookUrl)}/…</span><br>
     Test webhooks: <span class="mono">${esc(App.settings.webhookTestUrl)}/…</span><br>Timezone: <b>${esc(App.settings.timezone)}</b></div></div>`);
   shell('settings', page);
+  const showUpdates = (u) => {
+    const box = $('[data-updates]', page);
+    if (!u) { box.innerHTML = '<span class="muted">Update information is not available.</span>'; return; }
+    const when = u.checkedAt ? `checked ${ago(u.checkedAt)}` : 'not checked yet';
+    const head = !u.enabled ? `<b>Version ${esc(u.current)}</b> <span class="muted">· update checks are turned off</span>`
+      : u.updateAvailable ? `<b>Flowwolf ${esc(u.latest)} is available</b> <span class="muted">· you run ${esc(u.current)} · ${when}</span>`
+      : `<b>Flowwolf ${esc(u.current)} is up to date</b> <span class="muted">· ${when}</span>`;
+    const notes = u.updateAvailable ? u.releases.map((r) => `<div class="release"><div class="rh"><b>${esc(r.name)}</b>${r.url ? ` <a href="${esc(r.url)}" target="_blank" rel="noopener">Release page</a>` : ''}</div>${notesHtml(r.notes)}</div>`).join('') : '';
+    const how = u.updateAvailable && !u.canInstall ? `<p class="muted" style="margin:12px 0 6px">Update with Docker Compose:</p><div class="keybox"><span class="mono" style="flex:1">${esc(u.howTo.docker)}</span><button class="btn sm" data-cp>Copy</button></div>
+      ${u.canCheck ? '<p class="muted" style="font-size:12.5px;margin:8px 0 0">Set <span class="mono">FLOWWOLF_UPDATE_WEBHOOK</span> to your deploy hook (Dokploy, Coolify, …) to update with one click.</p>' : ''}` : '';
+    const err = u.error ? `<p class="err-text" style="margin:8px 0 0">Last check failed: ${esc(u.error)}</p>` : '';
+    box.innerHTML = `<div>${head}</div>${err}${notes ? `<div class="notes">${notes}</div>` : ''}${how}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${u.canInstall && u.updateAvailable ? `<button class="btn primary" data-install>${icon('download')}Install ${esc(u.latest)}</button>` : ''}
+      ${u.canCheck && u.enabled ? '<button class="btn" data-check>Check now</button>' : ''}</div>`;
+    const cp = $('[data-cp]', box);
+    if (cp) cp.onclick = () => copyText(u.howTo.docker);
+    const ck = $('[data-check]', box);
+    if (ck) ck.onclick = async () => {
+      ck.disabled = true;
+      try { App.updates = await api('POST', '/updates/check'); showUpdates(App.updates); $('[data-update-slot]').replaceChildren(...updateNav()); } catch (e) { fail(e); ck.disabled = false; }
+    };
+    const inst = $('[data-install]', box);
+    if (inst) inst.onclick = async () => {
+      if (!(await confirmBox(`Install Flowwolf ${u.latest}?`, 'Flowwolf restarts with the new version. The editor reconnects on its own.', 'Install update'))) return;
+      try { const r = await api('POST', '/updates/install'); toast('Update started', r.message); waitForVersion(u.current); } catch (e) { fail(e); }
+    };
+  };
+  showUpdates(App.updates);
+  api('GET', '/updates').then((u) => { App.updates = u; showUpdates(u); }).catch(() => showUpdates(null));
   $('[data-save]', page).onclick = async () => {
     try { await api('PATCH', '/me', { firstName: $('[data-fn]', page).value, lastName: $('[data-ln]', page).value }); App.user = await api('GET', '/login'); toast('Saved'); pageSettings(); } catch (e) { fail(e); }
   };
@@ -870,6 +933,19 @@ async function pageSettings() {
     };
     loadUsers();
   }
+}
+
+/** After an update: poll until the server answers with another version, then reload. */
+function waitForVersion(old) {
+  const t0 = Date.now();
+  const tick = async () => {
+    try {
+      const s = await fetch('/rest/settings').then((r) => r.json());
+      if (s.data && s.data.version !== old) { toast('Updated', `Flowwolf ${s.data.version} is running`); setTimeout(() => location.reload(), 1200); return; }
+    } catch { /* restarting */ }
+    if (Date.now() - t0 < 20 * 60000) setTimeout(tick, 5000);
+  };
+  setTimeout(tick, 5000);
 }
 
 document.addEventListener('DOMContentLoaded', () => boot().catch((e) => { document.body.innerHTML = `<div class="auth"><div class="auth-card"><h1>Cannot reach server</h1><p class="muted">${esc(e.message)}</p></div></div>`; }));

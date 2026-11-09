@@ -12,6 +12,8 @@ services:
       FLOWWOLF_URL: ${FLOWWOLF_URL:-http://localhost:5678}
       # Recommended: a fixed key (e.g. `openssl rand -hex 32`); otherwise one is generated in the volume.
       FLOWWOLF_ENCRYPTION_KEY: ${FLOWWOLF_ENCRYPTION_KEY:-}
+      # Optional: deploy hook for the "Install update" button (e.g. a Dokploy or Coolify deploy webhook).
+      # FLOWWOLF_UPDATE_WEBHOOK: https://dokploy.example.com/api/deploy/<token>
       # Optional SMTP for invitations and password reset mails:
       # N8N_SMTP_HOST: smtp.example.com
       # N8N_SMTP_PORT: "465"
