@@ -33,7 +33,7 @@ csv = "1"
 pdf-extract = "0.7"
 ego-tree = "0.6.3"
 flate2 = "1"
-mail-parser = "0.9"
+mail-parser = "1.0"
 pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
 quick-xml = "0.37"
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
