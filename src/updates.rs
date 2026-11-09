@@ -136,8 +136,15 @@ pub async fn install(State(app): State<AppState>, Extension(u): Extension<User>)
     let hook = env(&["FLOWWOLF_UPDATE_WEBHOOK"])
         .ok_or_else(|| err(StatusCode::BAD_REQUEST, "No update webhook is configured (FLOWWOLF_UPDATE_WEBHOOK). Update with Docker or the binary instead."))?;
     let latest = STATE.read().unwrap()["releases"][0]["version"].clone();
-    let r = app.http.post(&hook).json(&json!({"source": "flowwolf", "from": CURRENT, "to": latest, "requestedBy": u.email}))
-        .timeout(Duration::from_secs(30)).send().await
+    // Deploy hooks (Dokploy, …) expect a GitHub push for the app's branch; the extra fields say what and who.
+    let branch = env(&["FLOWWOLF_UPDATE_BRANCH"]).unwrap_or_else(|| "main".into());
+    let body = json!({"ref": format!("refs/heads/{branch}"), "repository": {"full_name": "WolfcastleDE/flowwolf"},
+                      "source": "flowwolf", "from": CURRENT, "to": latest, "requestedBy": u.email});
+    let mut rb = app.http.post(&hook).header("x-github-event", "push").json(&body);
+    if let Some(t) = env(&["FLOWWOLF_UPDATE_WEBHOOK_TOKEN"]) {
+        rb = rb.bearer_auth(t);
+    }
+    let r = rb.timeout(Duration::from_secs(30)).send().await
         .map_err(|e| err(StatusCode::BAD_GATEWAY, format!("The update webhook could not be reached: {e}")))?;
     if !r.status().is_success() {
         return Err(err(StatusCode::BAD_GATEWAY, format!("The update webhook answered {}", r.status())));

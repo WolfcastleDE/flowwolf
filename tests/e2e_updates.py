@@ -81,8 +81,11 @@ ex = rest("GET", f"/executions?workflowId={hook}")
 runs = ex if isinstance(ex, list) else ex.get("results", ex.get("data", []))
 detail = rest("GET", f"/executions/{runs[0]['id']}") if runs else {}
 body = detail.get("data", {}).get("resultData", {}).get("runData", {}).get("Hook", [{}])[0].get("data", {}).get("main", [[{}]])[0][0].get("json", {}).get("body", {}) if detail else {}
+headers = detail.get("data", {}).get("resultData", {}).get("runData", {}).get("Hook", [{}])[0].get("data", {}).get("main", [[{}]])[0][0].get("json", {}).get("headers", {}) if detail else {}
 check("install calls the deploy hook with from/to versions", r["started"] is True and len(runs) == 1 and body.get("to") == "0.2.0"
       and body.get("from") == before["current"] and body.get("requestedBy") == "owner@example.com", f"{r} {body}")
+check("the hook gets a GitHub push for the branch (what Dokploy expects)", headers.get("x-github-event") == "push" and body.get("ref") == "refs/heads/main",
+      f"{headers.get('x-github-event')} {body.get('ref')}")
 
 # a failing hook is reported, not swallowed
 rest("POST", f"/workflows/{hook}/deactivate")

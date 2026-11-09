@@ -97,6 +97,7 @@ Turn the check off with `FLOWWOLF_VERSION_NOTIFICATIONS_ENABLED=false` (n8n's `N
 | `FLOWWOLF_WORKER_CONCURRENCY` | `10` | Parallel executions per worker |
 | `FLOWWOLF_EXECUTIONS_MAX_AGE_HOURS` / `_MAX_COUNT` | `336` / `10000` | Execution pruning |
 | `FLOWWOLF_UPDATE_WEBHOOK` | – | Deploy hook the **Install update** button calls (Dokploy, Coolify, …) |
+| `FLOWWOLF_UPDATE_BRANCH` / `_WEBHOOK_TOKEN` | `main` / – | Branch sent to the hook as a GitHub push (`ref: refs/heads/<branch>`); optional bearer token |
 | `FLOWWOLF_VERSION_NOTIFICATIONS_ENABLED` (`N8N_…`) | `true` | Daily check for new releases |
 | `FLOWWOLF_UPDATE_URL` | GitHub releases API | Where the release list comes from (mirror, tests) |
 
