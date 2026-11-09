@@ -20,13 +20,17 @@ L.BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:5679"
 rest, node, chain, check = L.rest, L.node, L.chain, L.check
 L.login_or_setup()
 
+# Versions relative to the running one, so the test keeps working after every release.
+CURRENT = rest("GET", "/updates")["current"]
+MAJ, MIN, PAT = (int(x) for x in CURRENT.split(".")[:3])
+NEW, PATCH = f"{MAJ}.{MIN + 1}.0", f"{MAJ}.{MIN}.{PAT + 5}"
 RELEASES = [
-    {"tag_name": "v0.3.0-rc.1", "name": "v0.3.0-rc.1", "html_url": "https://example.test/rc", "body": "pre", "draft": False, "prerelease": True},
-    {"tag_name": "v0.2.0", "name": "Flowwolf 0.2.0", "html_url": "https://example.test/0.2.0", "published_at": "2026-12-01T10:00:00Z",
+    {"tag_name": f"v{MAJ}.{MIN + 2}.0-rc.1", "name": "rc", "html_url": "https://example.test/rc", "body": "pre", "draft": False, "prerelease": True},
+    {"tag_name": f"v{NEW}", "name": f"Flowwolf {NEW}", "html_url": f"https://example.test/{NEW}", "published_at": "2026-12-01T10:00:00Z",
      "body": "### Changed\n- Faster webhooks\n- `$now` uses the time zone", "draft": False, "prerelease": False},
-    {"tag_name": "v0.9.0", "name": "draft", "draft": True, "prerelease": False},
-    {"tag_name": "v0.1.5", "name": "", "html_url": "https://example.test/0.1.5", "body": "fixes", "draft": False, "prerelease": False},
-    {"tag_name": "v0.1.0", "name": "Flowwolf 0.1.0", "draft": False, "prerelease": False},
+    {"tag_name": f"v{MAJ}.{MIN + 9}.0", "name": "draft", "draft": True, "prerelease": False},
+    {"tag_name": f"v{PATCH}", "name": "", "html_url": f"https://example.test/{PATCH}", "body": "fixes", "draft": False, "prerelease": False},
+    {"tag_name": f"v{CURRENT}", "name": f"Flowwolf {CURRENT}", "draft": False, "prerelease": False},
 ]
 
 
@@ -46,9 +50,9 @@ check("status without a release list: no update, version shown", before["updateA
 mock("releases", "GET", "releases", RELEASES)
 u = rest("POST", "/updates/check")
 check("newer releases are found, newest first; drafts and pre-releases are left out",
-      u["updateAvailable"] is True and u["latest"] == "0.2.0" and [r["version"] for r in u["releases"]] == ["0.2.0", "0.1.5"], str(u))
-check("release notes, links and names come along", u["releases"][0]["notes"].startswith("### Changed") and u["releases"][0]["url"] == "https://example.test/0.2.0"
-      and u["releases"][1]["name"] == "v0.1.5")
+      u["updateAvailable"] is True and u["latest"] == NEW and [r["version"] for r in u["releases"]] == [NEW, PATCH], str(u))
+check("release notes, links and names come along", u["releases"][0]["notes"].startswith("### Changed") and u["releases"][0]["url"] == f"https://example.test/{NEW}"
+      and u["releases"][1]["name"] == f"v{PATCH}")
 check("owners can check and install (a deploy hook is set)", u["canCheck"] is True and u["canInstall"] is True and u["checkedAt"])
 
 # a member sees the notice but cannot check or install
@@ -82,7 +86,7 @@ runs = ex if isinstance(ex, list) else ex.get("results", ex.get("data", []))
 detail = rest("GET", f"/executions/{runs[0]['id']}") if runs else {}
 body = detail.get("data", {}).get("resultData", {}).get("runData", {}).get("Hook", [{}])[0].get("data", {}).get("main", [[{}]])[0][0].get("json", {}).get("body", {}) if detail else {}
 headers = detail.get("data", {}).get("resultData", {}).get("runData", {}).get("Hook", [{}])[0].get("data", {}).get("main", [[{}]])[0][0].get("json", {}).get("headers", {}) if detail else {}
-check("install calls the deploy hook with from/to versions", r["started"] is True and len(runs) == 1 and body.get("to") == "0.2.0"
+check("install calls the deploy hook with from/to versions", r["started"] is True and len(runs) == 1 and body.get("to") == NEW
       and body.get("from") == before["current"] and body.get("requestedBy") == "owner@example.com", f"{r} {body}")
 check("the hook gets a GitHub push for the branch (what Dokploy expects)", headers.get("x-github-event") == "push" and body.get("ref") == "refs/heads/main",
       f"{headers.get('x-github-event')} {body.get('ref')}")

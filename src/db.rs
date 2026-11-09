@@ -539,7 +539,11 @@ impl Db {
 
     /// Executions left in "running" by a crash of this main process can never finish.
     pub fn mark_crashed(&self) -> Result<()> {
-        self.exec("UPDATE executions SET status = 'crashed', stopped_at = ?1 WHERE status = 'running' AND worker IS NULL", p![now_iso()])?;
+        // The editor shows this message instead of a bare "Workflow failed".
+        let why = serde_json::json!({"resultData": {"runData": {}, "error": {"message":
+            "Flowwolf was restarted while this execution was running (for example during an update), so it was stopped. Run it again."}}});
+        self.exec("UPDATE executions SET status = 'crashed', stopped_at = ?1, data = COALESCE(NULLIF(data, ''), ?2) WHERE status = 'running' AND worker IS NULL",
+                  p![now_iso(), why.to_string()])?;
         Ok(())
     }
 

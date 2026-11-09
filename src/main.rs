@@ -116,10 +116,25 @@ async fn serve(worker: bool) -> Result<()> {
         }
     });
 
+    let running = app.clone();
     let router = api::router(app).layer(tower_http::compression::CompressionLayer::new());
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", cfg.port)).await?;
     tracing::info!("Flowwolf {} listening on {} (editor: {}/app)", env!("CARGO_PKG_VERSION"), cfg.port, cfg.base_url);
     axum::serve(listener, router).with_graceful_shutdown(shutdown()).await?;
+    // Let running executions finish before the process ends (n8n: N8N_GRACEFUL_SHUTDOWN_TIMEOUT).
+    let secs: u64 = ["FLOWWOLF_GRACEFUL_SHUTDOWN_TIMEOUT", "N8N_GRACEFUL_SHUTDOWN_TIMEOUT"].iter()
+        .find_map(|k| std::env::var(k).ok()).and_then(|v| v.parse().ok()).unwrap_or(30);
+    let deadline = std::time::Instant::now() + Duration::from_secs(secs);
+    let left = || running.running.lock().unwrap().len();
+    if left() > 0 {
+        tracing::info!("waiting up to {secs} s for {} running execution(s)", left());
+    }
+    while left() > 0 && std::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+    if left() > 0 {
+        tracing::warn!("stopping with {} execution(s) still running; they are marked as interrupted on the next start", left());
+    }
     Ok(())
 }
 

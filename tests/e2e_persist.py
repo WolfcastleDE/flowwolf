@@ -64,4 +64,39 @@ for _ in range(120):
 ex = L.wait_exec(e2["id"])
 check("timed wait resumes after the restart", ex["status"] == "success" and out(ex, "Done") == [{"done": True}], f"{ex['status']}")
 
+
+# ---------------------------------------------------------------- restarts while something runs
+def wait_up():
+    for _ in range(120):
+        try:
+            urllib.request.urlopen(L.BASE + "/healthz", timeout=2)
+            return
+        except Exception:
+            time.sleep(0.5)
+
+
+def busy(secs):
+    """A manual run that keeps a Code node busy for `secs` seconds."""
+    wf = {"name": f"busy {secs}", "nodes": [node("Start", "n8n-nodes-base.manualTrigger", 0),
+          node("Busy", "n8n-nodes-base.code", 200, {"jsCode": f"const t = Date.now(); while (Date.now() - t < {secs * 1000}) {{}} return [{{json: {{done: true}}}}];"}, 2)],
+          "connections": chain("Start", "Busy")}
+    eid = rest("POST", "/workflows/run", {"workflowData": wf})["executionId"]
+    time.sleep(1.0)
+    return eid
+
+
+eid = busy(4)
+subprocess.run(["docker", "restart", "-t", "30", CONTAINER], check=True, capture_output=True)
+wait_up()
+ex = rest("GET", f"/executions/{eid}")
+check("a normal restart (update) lets a running execution finish first", ex["status"] == "success", ex["status"])
+
+eid = busy(30)
+subprocess.run(["docker", "kill", CONTAINER], check=True, capture_output=True)
+subprocess.run(["docker", "start", CONTAINER], check=True, capture_output=True)
+wait_up()
+ex = rest("GET", f"/executions/{eid}")
+msg = str((ex.get("data") or {}).get("resultData", {}).get("error", {}).get("message", ""))
+check("a run cut off by a hard stop is marked with the reason", ex["status"] == "crashed" and "restarted while this execution was running" in msg, f"{ex['status']} {msg}")
+
 print(f"\nall {L.passed} persistence checks passed")
