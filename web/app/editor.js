@@ -774,10 +774,11 @@ const Editor = {
     if (needsListen) return Editor.listen();
     E.status = {}; E.counts = {}; E.runData = {};
     draw();
+    NDV.busy(0);
     try {
       const r = await api('POST', '/workflows/run', { workflowData: Editor.serialize(), destinationNode: destination });
       await Editor.follow(r.executionId);
-    } catch (e) { fail(e); }
+    } catch (e) { fail(e); NDV.busy(null); }
   },
 
   async follow(id) {
@@ -785,13 +786,16 @@ const Editor = {
     $('[data-run]')?.classList.add('hidden');
     $('[data-stop]')?.classList.remove('hidden');
     let ex;
+    const t0 = Date.now();
     for (;;) {
       await new Promise((r) => setTimeout(r, 350));
-      if (!E || E.running !== id) return;
+      if (!E || E.running !== id) { NDV.busy(null); return; }
+      NDV.busy(Math.floor((Date.now() - t0) / 1000));
       try { ex = await api('GET', '/executions/' + id); } catch { continue; }
-      if (ex.status !== 'running') break;
+      if (ex.status !== 'running' && ex.status !== 'new' && ex.status !== 'queued') break;
     }
     E.running = null;
+    NDV.busy(null);
     $('[data-run]')?.classList.remove('hidden');
     $('[data-stop]')?.classList.add('hidden');
     Editor.applyExecution(ex, true);
@@ -1372,7 +1376,7 @@ const NDV = {
     nm.onchange = () => { NDV.name = renameNode(NDV.name, nm.value); nm.value = NDV.name; };
     nm.onkeydown = (e) => { if (e.key === 'Enter') nm.blur(); };
     $('[data-close]', NDV.el).onclick = () => NDV.close();
-    $('[data-test]', NDV.el)?.addEventListener('click', () => Editor.run(NDV.name));
+    $('[data-test]', NDV.el)?.addEventListener('click', () => (E.running ? Editor.stop() : Editor.run(NDV.name)));
     NDV.el.addEventListener('mousedown', (e) => { if (e.target === NDV.el) NDV.close(); });
     NDV.el.querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => { NDV.tab = b.dataset.t; NDV.el.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); NDV.renderParams(); }));
     NDV.key = (e) => { if (e.key === 'Escape' && !$('.overlay')) NDV.close(); };
@@ -1394,6 +1398,26 @@ const NDV = {
   },
 
   refresh() { if (NDV.el && nodeBy(NDV.name)) NDV.renderData(); },
+  /** Running state of a test: sec = seconds since start, null = done. */
+  busy(sec) {
+    if (!NDV.el) return;
+    const btn = $('[data-test]', NDV.el);
+    if (sec === null) {
+      const n = nodeBy(NDV.name);
+      if (btn) { btn.classList.remove('busy'); btn.title = ''; btn.innerHTML = icon('play') + (n && isHookType(n.type) ? 'Listen for test event' : 'Test step'); }
+      $('.ndv-running', NDV.el)?.remove();
+      return;
+    }
+    if (btn) { btn.classList.add('busy'); btn.title = 'Stop this test'; btn.innerHTML = `<span class="spin"></span>Running… ${sec}s`; }
+    const out = $('[data-out]', NDV.el);
+    let bar = $('.ndv-running', NDV.el);
+    if (out && !bar) {
+      bar = h(`<div class="ndv-running" role="status"><span class="spin"></span><span data-rt></span><button class="btn sm" type="button">Stop</button></div>`);
+      $('button', bar).onclick = () => Editor.stop();
+      out.prepend(bar);
+    }
+    if (bar) $('[data-rt]', bar).textContent = sec < 3 ? 'Running…' : `Running… ${sec} s (waiting for the slowest node)`;
+  },
 
   renderParams() {
     const n = nodeBy(NDV.name);

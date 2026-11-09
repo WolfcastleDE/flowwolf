@@ -274,4 +274,19 @@ ex = rest("GET", "/executions?limit=1")[0]
 r = rest("POST", f"/executions/{ex['id']}/stop") if ex["status"] == "running" else None
 check("stop endpoint answers", r is None or r["stopped"] is True)
 
+# requests without an answer say why: connection refused vs. timeout
+def http_error(url, timeout_ms):
+    wf = {"name": "http error", "nodes": [
+        {"name": "Start", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0], "parameters": {}},
+        {"name": "HTTP", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [200, 0], "parameters": {"url": url, "options": {"timeout": timeout_ms}}}],
+        "connections": {"Start": {"main": [[{"node": "HTTP", "type": "main", "index": 0}]]}}}
+    ex = run_manual(wf)
+    return ex["status"], str((ex["data"]["resultData"].get("error") or {}).get("message", ""))
+
+
+st, msg = http_error("http://127.0.0.1:1/x", 5000)
+check("a refused connection names host and cause", st == "error" and msg.startswith("Could not connect to 127.0.0.1"), msg)
+st, msg = http_error("http://10.255.255.1/x", 1500)
+check("a timeout says so, with the time limit", st == "error" and "timed out after 2 s" in msg, msg)
+
 print(f"\nall {passed} checks passed")

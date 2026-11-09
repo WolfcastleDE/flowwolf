@@ -343,7 +343,7 @@ async fn exec(ctx: &Ctx<'_>, d: &Value) -> Result<Out> {
         if let Some(service) = &aws_service {
             sign_v4(&mut req, &creds, service, chrono::Utc::now())?;
         }
-        let resp = ctx.eng.app.http.execute(req).await.map_err(|e| anyhow!("Request failed: {e}"))?;
+        let resp = ctx.eng.app.http.execute(req).await.map_err(|e| super::integrations::request_error(&e, Some(120_000)))?;
         let status = resp.status();
         let text = resp.text().await?;
         let parsed: Value = if text.trim().is_empty() { json!({"success": true}) } else { serde_json::from_str(&text).unwrap_or_else(|_| json!({"data": text})) };

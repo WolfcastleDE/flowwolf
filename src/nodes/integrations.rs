@@ -29,6 +29,26 @@ pub async fn run(ctx: &Ctx<'_>, kind: &str) -> Option<Result<Out>> {
     })
 }
 
+/// A readable message for a request that got no answer: timeout, connection problem (DNS,
+/// refused, TLS) or something else, with the host and the underlying cause.
+pub(crate) fn request_error(e: &reqwest::Error, timeout_ms: Option<u64>) -> anyhow::Error {
+    let host = e.url().and_then(|u| u.host_str()).unwrap_or("the server").to_string();
+    // The innermost error says what really happened ("Connection refused", "dns error", …).
+    let mut cause: &dyn std::error::Error = e;
+    while let Some(s) = cause.source() {
+        cause = s;
+    }
+    let cause = cause.to_string();
+    if e.is_timeout() {
+        let after = timeout_ms.map(|ms| format!(" after {} s", (ms as f64 / 1000.0).round() as u64)).unwrap_or_default();
+        return anyhow!("The request to {host} timed out{after} without an answer. The server is slow or not reachable from here; raise the timeout under Options if it is just slow.");
+    }
+    if e.is_connect() {
+        return anyhow!("Could not connect to {host}: {cause}");
+    }
+    anyhow!("Request to {host} failed: {cause}")
+}
+
 fn pairs(list: Vec<Value>) -> Vec<(String, String)> {
     list.iter().filter(|p| !as_str(&p["name"]).is_empty()).map(|p| (as_str(&p["name"]), as_str(&p["value"]))).collect()
 }
@@ -174,7 +194,7 @@ async fn http_one(ctx: &Ctx<'_>, i: usize) -> Result<Vec<Item>> {
     let timeout = ctx.n("options.timeout", i, 300_000.0)?;
     rb = rb.timeout(Duration::from_millis(timeout as u64));
 
-    let resp = rb.send().await.map_err(|e| anyhow!("Request failed: {e}"))?;
+    let resp = rb.send().await.map_err(|e| request_error(&e, Some(timeout as u64)))?;
     let status = resp.status();
     let headers: Map<String, Value> = resp.headers().iter().map(|(k, v)| (k.to_string(), json!(v.to_str().unwrap_or("")))).collect();
     let ctype = resp.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
