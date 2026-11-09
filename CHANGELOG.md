@@ -2,13 +2,16 @@
 
 All notable changes are listed here. Versions follow [semantic versioning](https://semver.org).
 
-## [Unreleased]
+## [0.2.0] - 2026-11-09
 
 ### Added
 
 - Update notices: Flowwolf checks the GitHub releases once a day; the sidebar shows **Update x.y.z** and
   Settings → Updates lists the release notes. With `FLOWWOLF_UPDATE_WEBHOOK` set, owners and admins update with
   one click through the platform's deploy hook (Dokploy, Coolify, …).
+- Benchmark against n8n 2.46.6 (`tools/benchmark.py`), results in the README and on the website.
+- Tests that run every node type, every option of the credential-free nodes and every operation of every
+  integration once.
 
 ### Changed
 
@@ -17,6 +20,13 @@ All notable changes are listed here. Versions follow [semantic versioning](https
   a separate agreement. v0.1.0 and earlier remain available under MIT.
 - Expressions and the Code node: `DateTime`, `$now` and `$today` use the instance time zone (`GENERIC_TIMEZONE`)
   like Luxon in n8n, with correct daylight saving time.
+
+### Fixed
+
+- Editor on phones: Save and the menu stay on screen; wide tables scroll sideways; the "Invited" label is readable
+  in dark mode.
+- Stop and Error without a message now ends the run with a readable default message.
+- An invalid Discord webhook URL in the credential gives a clear error instead of "builder error".
 
 ## [0.1.0] - 2026-11-08
 
