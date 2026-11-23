@@ -30,24 +30,39 @@ Or with Compose: download [`docker-compose.yml`](docker-compose.yml) and run `do
 
 ## Benchmark
 
-Flowwolf and n8n side by side in Docker, each limited to 2 CPU cores and 2 GB RAM, running the same workflow
-(Webhook → Code → Set) under the same load (50 concurrent requests for 20 s after a warm-up).
+Flowwolf and n8n side by side in Docker, each limited to 2 CPU cores and 2 GB RAM, under the same load for 20 s
+after a warm-up. Two kinds of workflows: Webhook → Code → Set (pure processing), and Webhook → HTTP Request → Set
+against a backend that answers after 500 ms, which shows how both cope with many executions waiting at once.
+Throughput counts answered requests only.
 
-| | Flowwolf 0.1.0 | n8n 2.46.6 | |
-|---|---|---|---|
-| Startup until ready | 0.8 s | 5.8 s | ~7× faster |
-| Memory at idle | 4.3 MB | 653 MB | ~150× less |
-| Docker image | 104 MB | 1.94 GB | ~19× smaller |
-| Throughput, simple workflow | 49–56 req/s | 15 req/s | ~3.5× |
-| Throughput, 1,000 items per run | 44 req/s | 13 req/s | ~3.4× |
-| Median response time under load | 1.0 s | 3.2 s | ~3× faster |
-| Memory under load | 49–189 MB | 719–799 MB | ~4–15× less |
-| Single request without load | ~18 ms | | |
+| | Flowwolf 0.2.0 | n8n 2.48.8 |
+|---|---|---|
+| Startup until ready | 0.75 s | 9.5 s |
+| Memory at idle | 4.4 MB | 721 MB |
+| Docker image | 104 MB | 2.18 GB |
+| **Code → Set, 50 concurrent** | | |
+| Throughput | 217 req/s | 20 req/s |
+| Latency p50 / p95 / p99 | 228 / 368 / 440 ms | 2.67 / 2.91 / 3.00 s |
+| Memory under load | 60 MB | 772 MB |
+| **Code returning 1,000 items, 50 concurrent** | | |
+| Throughput | 80 req/s | 15 req/s |
+| Latency p50 / p95 / p99 | 626 / 935 / 1,036 ms | 3.72 / 4.68 / 4.90 s |
+| Memory under load | 279 MB | 803 MB |
+| **500 ms backend, 50 concurrent** (ideal: 100 req/s, 500 ms) | | |
+| Throughput | 94 req/s | 18 req/s |
+| Latency p50 / p95 / p99 | 529 / 618 / 689 ms | 2.78 / 3.33 / 3.85 s |
+| Memory under load | 305 MB | 754 MB |
+| **500 ms backend, 200 concurrent** (ideal: 400 req/s, 500 ms) | | |
+| Throughput | 143 req/s | 29 req/s |
+| Latency p50 / p95 / p99 | 1.06 / 3.77 / 4.41 s | 9.15 / 9.93 / 10.39 s |
+| Memory under load | 444 MB | 920 MB |
 
-Measured on 8 November 2026 with Docker Desktop on Windows, which adds network overhead on both sides; on a
-Linux server both are faster. Workflows that mostly wait for slow external APIs show less difference. n8n ran in
-its default mode without queue workers. Flowwolf currently runs executions of one instance one after another,
-so its throughput does not grow with more cores yet; parallel execution is the next performance step.
+Measured on 23 November 2026 with Docker Desktop on Windows; load generator, backend and both systems share one
+Docker network. The backend alone handles 387 req/s at 200 concurrent requests, so it is not the limit. Both ran
+in their default mode (SQLite, no queue workers). Executions that wait on an API hold a thread each, which is why
+memory grows with the number of waiting workflows; at 200 concurrent the tail latency rises, so put
+`FLOWWOLF_CONCURRENCY_PRODUCTION_LIMIT` or queue mode in front of very bursty load. A comparison in queue mode
+(PostgreSQL, Redis for n8n, same number of workers) is planned.
 Reproduce it with [`tools/benchmark.py`](tools/benchmark.py).
 
 ## Deploy
