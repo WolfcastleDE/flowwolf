@@ -60,9 +60,32 @@ Throughput counts answered requests only.
 Measured on 23 November 2026 with Docker Desktop on Windows; load generator, backend and both systems share one
 Docker network. The backend alone handles 387 req/s at 200 concurrent requests, so it is not the limit. Both ran
 in their default mode (SQLite, no queue workers). Executions that wait on an API hold a thread each, which is why
-memory grows with the number of waiting workflows; at 200 concurrent the tail latency rises, so put
-`FLOWWOLF_CONCURRENCY_PRODUCTION_LIMIT` or queue mode in front of very bursty load. A comparison in queue mode
-(PostgreSQL, Redis for n8n, same number of workers) is planned.
+memory grows with the number of waiting workflows; at 200 concurrent the tail latency rises, so cap very bursty
+load with `FLOWWOLF_CONCURRENCY_PRODUCTION_LIMIT`.
+
+**Queue mode** (`python tools/benchmark.py --queue`): both on PostgreSQL with a main process and two workers
+with 25 slots each, every container limited to 1 CPU and 1 GB; n8n additionally uses Redis. Memory is main plus
+workers, without database and Redis.
+
+| | Flowwolf 0.2.0 | n8n 2.48.8 |
+|---|---|---|
+| Memory at idle | 13 MB | 1,338 MB |
+| **Code → Set, 50 concurrent** | | |
+| Throughput | 73 req/s | 49 req/s |
+| Latency p50 / p95 / p99 | 702 / 925 / 1,029 ms | 992 / 1,474 / 2,062 ms |
+| Memory under load | 114 MB | 1,310 MB |
+| **500 ms backend, 50 concurrent** | | |
+| Throughput | 62 req/s | 47 req/s |
+| Latency p50 / p95 / p99 | 810 / 993 / 1,263 ms | 996 / 1,625 / 2,250 ms |
+| Memory under load | 148 MB | 1,278 MB |
+| **500 ms backend, 200 concurrent** | | |
+| Throughput | 83 req/s | 62 req/s |
+| Latency p50 / p95 / p99 | 2.54 / 3.48 / 4.10 s | 3.42 / 4.49 / 5.24 s |
+| Memory under load | 175 MB | 1,222 MB |
+
+In queue mode Flowwolf is slower than in its default mode: workers pick up new executions and the main process
+picks up their results by polling PostgreSQL every 150–200 ms, which adds a few hundred milliseconds per request.
+For a single server the default mode is the faster choice; queue mode is for spreading work over several hosts.
 Reproduce it with [`tools/benchmark.py`](tools/benchmark.py).
 
 ## Deploy
