@@ -361,18 +361,19 @@ docker run … flowwolf worker</pre>
   <table>
     <tr><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Aspect</span></th><th scope="col">Flowwolf</th><th scope="col">n8n</th></tr>
     <tr><td>Runtime</td><td>One Rust binary</td><td>Node.js with npm packages</td></tr>
-    <tr><td>Startup until ready</td><td>0.8 s</td><td>5.8 s</td></tr>
-    <tr><td>Memory at idle</td><td>4.3 MB</td><td>653 MB</td></tr>
-    <tr><td>Docker image</td><td>104 MB</td><td>1.94 GB</td></tr>
-    <tr><td>Throughput, same workflow</td><td>49–56 requests/s</td><td>15 requests/s</td></tr>
-    <tr><td>Median response under load</td><td>1.0 s</td><td>3.2 s</td></tr>
+    <tr><td>Startup until ready</td><td>0.75 s</td><td>9.5 s</td></tr>
+    <tr><td>Memory at idle</td><td>4.4 MB</td><td>721 MB</td></tr>
+    <tr><td>Docker image</td><td>104 MB</td><td>2.18 GB</td></tr>
+    <tr><td>Throughput, same workflow</td><td>217 requests/s</td><td>20 requests/s</td></tr>
+    <tr><td>Response under load, p50 / p95</td><td>228 / 368 ms</td><td>2.67 / 2.91 s</td></tr>
+    <tr><td>Waiting on a 500 ms API, 50 at once</td><td>94 requests/s, p95 618 ms</td><td>18 requests/s, p95 3.33 s</td></tr>
     <tr><td>Database</td><td>SQLite or PostgreSQL</td><td>SQLite or PostgreSQL</td></tr>
     <tr><td>Queue mode</td><td>Workers on PostgreSQL, no Redis</td><td>Workers on Redis and PostgreSQL</td></tr>
     <tr><td>Workflow format and API</td><td>n8n JSON, /api/v1</td><td>n8n JSON, /api/v1</td></tr>
     <tr><td>Integrations</td><td>408 node types</td><td>More than 400</td></tr>
     <tr><td>License</td><td>Sustainable Use License (fair-code)</td><td>Sustainable Use License (fair-code)</td></tr>
   </table>
-  <p class="intro" style="margin-top:14px;font-size:14px">Measured side by side on the same machine: Flowwolf 0.1.0 and n8n 2.46.6, each with 2 CPU cores and 2 GB RAM, the same Webhook → Code → Set workflow and 50 concurrent requests. Workflows that mostly wait for slow external APIs show less difference. <a href="https://github.com/WolfcastleDE/flowwolf/blob/main/tools/benchmark.py">Run the benchmark yourself</a>.</p>
+  <p class="intro" style="margin-top:14px;font-size:14px">Measured side by side on the same machine: Flowwolf 0.2.0 and n8n 2.48.8, each with 2 CPU cores and 2 GB RAM, 50 concurrent requests, once with Webhook → Code → Set and once with an HTTP Request to an API that answers after 500 ms. More runs, p99 and memory are in the README. <a href="https://github.com/WolfcastleDE/flowwolf/blob/main/tools/benchmark.py">Run the benchmark yourself</a>.</p>
 </section>
 
 <section id="faq">
