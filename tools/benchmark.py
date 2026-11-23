@@ -5,9 +5,12 @@
 Measures startup time, idle and loaded memory, image size, throughput and p50/p95/p99 latency.
 Everything runs on one Docker network, so hey and the backend reach the systems without the host in between.
 
-Usage (needs Docker; pulls n8nio/n8n:latest and williamyeh/hey):
+With --queue both run in queue mode on PostgreSQL: a main process and two workers with 25 slots each, every
+container limited to 1 CPU and 1 GB (n8n additionally uses Redis). Memory is the sum of main and workers.
+
+Usage (needs Docker; pulls n8nio/n8n:latest, williamyeh/hey, python, postgres and redis):
   docker build -t flowwolf:latest .
-  python tools/benchmark.py
+  python tools/benchmark.py [--queue]
 """
 import http.cookiejar, json, re, subprocess, sys, time, urllib.error, urllib.request
 
@@ -107,14 +110,60 @@ out = sh(["docker", "run", "--rm", "--network", NET, "williamyeh/hey", "-z", "10
 print("backend alone (200 concurrent):", re.search(r"Requests/sec:\s+([\d.]+)", out)[1], "req/s,",
       "p95", re.search(r"95% in ([\d.]+) secs", out)[1], "s")
 
-RUNS = (("simple", SIMPLE, 50), ("1000_items", HEAVY, 50), ("slow_backend_50", SLOW, 50), ("slow_backend_200", SLOW, 200))
+# --queue: each system on PostgreSQL with a main process and WORKERS workers (n8n also needs Redis).
+# Main and each worker get 1 CPU and 1 GB; database and Redis are infrastructure and stay unlimited.
+QUEUE = "--queue" in sys.argv
+WORKERS, WORKER_SLOTS = 2, 25
+PG = ["-e", "DB_TYPE=postgresdb", "-e", "DB_POSTGRESDB_HOST=bench-pg", "-e", "DB_POSTGRESDB_DATABASE=bench",
+      "-e", "DB_POSTGRESDB_USER=bench", "-e", "DB_POSTGRESDB_PASSWORD=bench"]
+N8N_ENV = ["-e", "N8N_DIAGNOSTICS_ENABLED=false", "-e", "N8N_PERSONALIZATION_ENABLED=false", "-e", "N8N_SECURE_COOKIE=false",
+           "-e", "EXECUTIONS_DATA_SAVE_ON_SUCCESS=all"]
+
+
+def start(name, s):
+    """Starts the system and returns the names of its app containers (main first)."""
+    main = f"bench-{name}"
+    if not QUEUE:
+        sh(["docker", "run", "-d", "--name", main, "--network", NET, "--cpus=2", "--memory=2g", "-p", f"{s['port']}:{s['inner']}",
+            *(N8N_ENV if name == "n8n" else []), s["image"]])
+        return [main]
+    sh(["docker", "run", "-d", "--name", "bench-pg", "--network", NET, "-e", "POSTGRES_USER=bench", "-e", "POSTGRES_PASSWORD=bench",
+        "-e", "POSTGRES_DB=bench", "postgres:16-alpine"])
+    if name == "n8n":
+        sh(["docker", "run", "-d", "--name", "bench-redis", "--network", NET, "redis:7-alpine"])
+    for _ in range(60):
+        if "accepting" in sh(["docker", "exec", "bench-pg", "pg_isready", "-U", "bench"]):
+            break
+        time.sleep(0.5)
+    time.sleep(2)
+    env = PG + ["-e", "EXECUTIONS_MODE=queue", "-e", "N8N_ENCRYPTION_KEY=bench-key", "-e", "FLOWWOLF_ENCRYPTION_KEY=bench-key"]
+    if name == "n8n":
+        env += N8N_ENV + ["-e", "QUEUE_BULL_REDIS_HOST=bench-redis"]
+    else:
+        env += ["-e", f"FLOWWOLF_WORKER_CONCURRENCY={WORKER_SLOTS}"]
+    lim = ["--cpus=1", "--memory=1g", "--network", NET]
+    sh(["docker", "run", "-d", "--name", main, *lim, "-p", f"{s['port']}:{s['inner']}", *env, s["image"]])
+    workers = []
+    for i in range(1, WORKERS + 1):
+        w = f"{main}-w{i}"
+        args = ["worker", f"--concurrency={WORKER_SLOTS}"] if name == "n8n" else ["worker"]
+        sh(["docker", "run", "-d", "--name", w, "--hostname", w, *lim, *env, s["image"], *args])
+        workers.append(w)
+    return [main, *workers]
+
+
+def stop(names):
+    sh(["docker", "rm", "-f", *names, "bench-pg", "bench-redis"])
+
+
+RUNS = ((("simple", SIMPLE, 50), ("slow_backend_50", SLOW, 50), ("slow_backend_200", SLOW, 200)) if QUEUE else
+        (("simple", SIMPLE, 50), ("1000_items", HEAVY, 50), ("slow_backend_50", SLOW, 50), ("slow_backend_200", SLOW, 200)))
 results = {}
 for name, s in SYSTEMS.items():
     c_name = f"bench-{name}"
-    sh(f"docker rm -f {c_name}")
-    env = "-e N8N_DIAGNOSTICS_ENABLED=false -e N8N_PERSONALIZATION_ENABLED=false -e N8N_SECURE_COOKIE=false -e EXECUTIONS_DATA_SAVE_ON_SUCCESS=all" if name == "n8n" else ""
+    stop([c_name, f"{c_name}-w1", f"{c_name}-w2"])
     t0 = time.time()
-    sh(f"docker run -d --name {c_name} --network {NET} --cpus=2 --memory=2g -p {s['port']}:{s['inner']} {env} {s['image']}")
+    names = start(name, s)
     base = f"http://localhost:{s['port']}"
     while time.time() - t0 < 180:
         try:
@@ -124,12 +173,18 @@ for name, s in SYSTEMS.items():
             time.sleep(0.2)
     startup = round(time.time() - t0, 2)
     time.sleep(15)
-    idle = mem_mb(c_name)
+    mem = lambda: round(sum(mem_mb(n) or 0 for n in names), 1)
+    idle = mem()
     c = Client(base)
-    st, j = c.call("POST", "/rest/owner/setup", OWNER)
+    for _ in range(120):  # n8n on PostgreSQL answers /healthz before its REST routes exist
+        st, j = c.call("POST", "/rest/owner/setup", OWNER)
+        if st != 404:
+            break
+        time.sleep(1)
     if st >= 300:
         print(name, "setup", st, j); sys.exit(1)
-    r = {"startup_s": startup, "idle_mb": idle, "image": sh(["docker", "images", "--format", "{{.Size}}", s["image"]]),
+    r = {"mode": "queue" if QUEUE else "regular", "startup_s": startup, "idle_mb": idle,
+         "image": sh(["docker", "images", "--format", "{{.Size}}", s["image"]]),
          "version": sh(["docker", "exec", c_name, "n8n", "--version"]) if name == "n8n" else ""}
     for label, middle, conc in RUNS:
         path = f"bench-{label}"
@@ -142,12 +197,12 @@ for name, s in SYSTEMS.items():
         url = f"http://{c_name}:{s['inner']}/webhook/{path}"
         hey(url, seconds=5, conc=conc)  # warm-up
         res = hey(url, conc=conc)
-        res["mem_after_mb"] = mem_mb(c_name)
+        res["mem_after_mb"] = mem()
         res["probe"] = probe.decode(errors="replace")
         r[label] = res
     results[name] = r
     print(name, json.dumps(r))
-    sh(f"docker rm -f {c_name}")
+    stop(names)
 
 sh("docker rm -f bench-slow")
 sh(f"docker network rm {NET}")
